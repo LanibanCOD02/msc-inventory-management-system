@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Resource & Inventory Management Portal for M.S. Chellamuthu Trust & Research Foundation — Mental Health for All.">
+  <title>MSC Trust — Inventory Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=8">
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
+  <script src="app.js?v=15" defer></script>
+  <script src="charts.js?v=2" defer></script>
+</head>
+<body>
+  <div id="loginScreen" class="login-wrapper">
+    <div class="login-split">
+      <div class="login-left">
+        <div class="login-mission-content">
+          <h1 class="mission-title">Promoting Mental Health.</h1>
+          <p class="mission-subtitle">Mental Health for All.</p>
+          <div style="display:flex;gap:32px;margin-top:48px" class="login-stats">
+            <div>
+              <h3 style="font:700 28px 'Outfit',sans-serif;color:#fff;margin:0">6+</h3>
+              <p style="font-size:12px;color:rgba(255,255,255,0.65);margin:4px 0 0">Programs</p>
+            </div>
+            <div>
+              <h3 style="font:700 28px 'Outfit',sans-serif;color:#fff;margin:0">1,200+</h3>
+              <p style="font-size:12px;color:rgba(255,255,255,0.65);margin:4px 0 0">Items tracked</p>
+            </div>
+            <div>
+              <h3 style="font:700 28px 'Outfit',sans-serif;color:#fff;margin:0">4</h3>
+              <p style="font-size:12px;color:rgba(255,255,255,0.65);margin:4px 0 0">Departments</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="login-right">
+        <div class="login-form-container">
+          <div class="login-header">
+            <img src="img/logo.jpg" alt="M.S. Chellamuthu Trust & Research Foundation" class="login-brand-logo" />
+            <h2>Welcome back</h2>
+            <p>Sign in to your inventory dashboard</p>
+          </div>
+
+          <div id="sessionExpiredMsg" style="display:none;background:var(--danger-bg,#fef2f2);color:var(--danger,#dc2626);font-size:13px;padding:10px 14px;border-radius:6px;margin-bottom:16px;text-align:center;">
+            Your session has expired. Please sign in again.
+          </div>
+
+          <form id="loginForm" class="login-form">
+            <div class="login-input-wrap">
+              <i data-lucide="user"></i>
+              <input type="text" required placeholder="Username">
+            </div>
+            <div class="login-input-wrap" style="margin-bottom: 12px;">
+              <i data-lucide="lock"></i>
+              <input type="password" id="passwordInput" required placeholder="Password">
+              <button type="button" id="togglePassword" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:transparent;cursor:pointer;color:var(--muted);width:24px;height:24px;display:grid;place-items:center;padding:0;">
+                <i data-lucide="eye" id="toggleIcon" style="width:16px;height:16px;display:block;"></i>
+              </button>
+            </div>
+            <div id="loginErrorMsg" style="color: var(--danger); font-size: 13px; text-align: center; min-height: 18px; margin-bottom: 8px; font-weight: 500;"></div>
+            <button type="submit" class="primary-btn login-btn">Sign in</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-shell" id="appShell" style="display:none">
+    <!-- ─── Light Sidebar ─────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img src="img/logo.jpg" alt="M.S. Chellamuthu Trust & Research Foundation" class="brand-logo" />
+      </div>
+
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-item active" data-page="dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></button>
+        <button class="nav-item" data-page="inventory"><i data-lucide="package-search"></i><span>Inventory</span></button>
+        <button class="nav-item" data-page="inward"><i data-lucide="arrow-down-to-line"></i><span>Stock Inward</span></button>
+        <button class="nav-item" data-page="outward"><i data-lucide="arrow-up-from-line"></i><span>Stock Outward</span></button>
+        <button class="nav-item" data-page="categories"><i data-lucide="shapes"></i><span>Categories</span></button>
+        <button class="nav-item" data-page="programs"><i data-lucide="heart-handshake"></i><span>Programs</span></button>
+        <button class="nav-item" data-page="suppliers"><i data-lucide="truck"></i><span>Suppliers</span></button>
+        <button class="nav-item" data-page="reports"><i data-lucide="chart-no-axes-combined"></i><span>Reports</span></button>
+        <button class="nav-item admin-only" data-page="users"><i data-lucide="users"></i><span>Users</span></button>
+        <button class="nav-item admin-only" data-page="branches"><i data-lucide="map"></i><span>Branches</span></button>
+        <button class="nav-item" data-page="requests">
+          <i data-lucide="git-pull-request"></i><span>Requests</span>
+          <span id="adminPendingRequestsBadge" class="admin-only" style="display:none; margin-left:auto; background:var(--amber); color:white; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px;">0</span>
+        </button>
+      </nav>
+
+      <!-- FIX 2: Added logout button to the sidebar -->
+      <button class="nav-item" id="logoutBtn" style="margin-top:auto; color:var(--danger, #dc2626);">
+        <i data-lucide="log-out"></i><span>Logout</span>
+      </button>
+      <div class="sidebar-footer">
+        <i data-lucide="map-pin"></i>
+        <span>643, KK Nagar · Tamil Nadu 625020</span>
+      </div>
+    </aside>
+
+    <!-- ─── Main Content ──────────────────────────── -->
+    <main class="main-content">
+      <header class="topbar">
+        <button class="hamburger mobile-only" id="menuBtn" aria-label="Open navigation">
+          <div class="hamburger-lines"><span></span><span></span><span></span></div>
+        </button>
+        <button class="icon-btn mobile-only" id="mobileSearchBtn" aria-label="Search">
+          <i data-lucide="search"></i>
+        </button>
+        <div class="page-title">
+          <p id="dateDisplay"></p>
+          <h1 id="pageHeading">Inventory Dashboard</h1>
+        </div>
+        <div class="top-actions">
+          <button class="secondary-btn admin-only" id="bulkImportBtn" aria-label="Bulk Import" style="display:none;"><i data-lucide="file-up"></i><span class="desktop-only">Import</span></button>
+          <button class="secondary-btn admin-only" id="transferStockBtn" aria-label="Transfer Stock"><i data-lucide="arrow-left-right"></i><span class="desktop-only">Transfer</span></button>
+          <label class="search-box">
+            <i data-lucide="search"></i>
+            <span class="sr-only">Search inventory</span>
+            <input id="globalSearch" type="search" placeholder="Search items...">
+          </label>
+          <div class="admin-only" style="display:none; align-items:center;">
+            <select id="globalBranchSelector" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius); font: 500 13px 'Inter',sans-serif; background: var(--surface); color: var(--text); outline: none;">
+              <option value="">All Branches</option>
+            </select>
+          </div>
+          <div style="position:relative" id="notificationWrapper">
+            <button class="icon-btn notification-btn" id="notificationTrigger" aria-label="Notifications"><i data-lucide="bell"></i><span></span></button>
+            <div id="notificationDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 8px);background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);width:320px;z-index:30;overflow:hidden">
+              <div style="padding:12px 16px;border-bottom:1px solid var(--border-light);background:var(--surface);">
+                <p style="font:600 13px 'Inter',sans-serif;color:var(--text);margin:0">Low Stock Alerts</p>
+              </div>
+              <div id="notificationDropdownList" style="max-height:320px;overflow-y:auto;padding:0;">
+                <!-- Alerts injected here -->
+              </div>
+            </div>
+          </div>
+          <div style="position:relative" id="profileWrapper">
+            <div class="profile" id="profileTrigger" style="cursor:pointer">
+              <div class="avatar" id="profileAvatar">AK</div>
+              <div><strong id="profileName">Admin</strong><span id="profileRoleDesc">Store Manager</span></div>
+            </div>
+            <div id="profileDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 8px);background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-width:180px;z-index:30;overflow:hidden">
+              <div style="padding:12px 16px;border-bottom:1px solid var(--border-light)">
+                <p style="font:600 13px 'Inter',sans-serif;color:var(--text);margin:0" id="dropdownName">Admin</p>
+                <p style="font-size:11px;color:var(--muted);margin:2px 0 0" id="dropdownRole">Store Manager</p>
+              </div>
+              <button onclick="document.getElementById('logoutBtn').click()" style="width:100%;display:flex;gap:8px;align-items:center;padding:10px 16px;border:0;background:transparent;color:var(--red);font:500 13px 'Inter',sans-serif;cursor:pointer">
+                <i data-lucide="log-out" style="width:15px;height:15px"></i> Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div id="mobileSearchBar" style="display:none;padding:8px 16px;background:var(--white);border-bottom:1px solid var(--border)">
+        <label class="search-box" style="width:100%">
+          <i data-lucide="search"></i>
+          <input id="mobileSearch" type="search" placeholder="Search items...">
+        </label>
+      </div>
+
+      <!-- ─── Dashboard ────────────────────────────── -->
+      <section class="dashboard" id="dashboard">
+        <div class="welcome-banner">
+          <div>
+            <h2 id="greetingText">Good morning, Admin</h2>
+            <p>Keep every mental health, rehabilitation, and community program supplied.</p>
+          </div>
+          <button class="primary-btn" id="addItemBtn"><i data-lucide="plus"></i>Add new item</button>
+        </div>
+
+        <!-- Metrics Row (4 cards) -->
+        <div class="metrics-row">
+          <article class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="boxes"></i></div>
+            <div><p>Total Items</p><h3 id="totalItems">—</h3></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="circle-check-big"></i></div>
+            <div><p>Available Stock</p><h3 id="availableStock">—</h3></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon amber"><i data-lucide="triangle-alert"></i></div>
+            <div><p>Low Stock Alerts</p><h3 id="lowStockCount">—</h3></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="indian-rupee"></i></div>
+            <div><p>Inventory Value</p><h3 id="invValue">—</h3></div>
+          </article>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="card">
+            <div class="card-header">
+              <div><h3>Stock Movement</h3><p>Weekly inward vs outward trend</p></div>
+              <select id="movementPeriod" aria-label="Movement period"><option>This month</option><option>Last month</option></select>
+            </div>
+            <div id="movementChart" class="chart-area"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div><h3>Category Distribution</h3><p>Items by category</p></div>
+            </div>
+            <div id="categoryChart" class="chart-area"></div>
+          </div>
+        </div>
+
+        <!-- Table + Sidebar -->
+        <div class="main-grid">
+          <!-- Inventory Table -->
+          <div class="card">
+            <div class="card-header">
+              <div><h3>Inventory Overview</h3><p>Monitor current stock across all categories</p></div>
+              <div class="card-actions">
+                <select id="categoryFilter" aria-label="Filter inventory category">
+                  <option value="all">All categories</option>
+                  <option value="Clinical &amp; Pharma">Clinical &amp; Pharma</option>
+                  <option value="Program materials">Program materials</option>
+                  <option value="Food &amp; nutrition">Food &amp; nutrition</option>
+                  <option value="Vocational &amp; Care">Vocational &amp; Care</option>
+                </select>
+                <button class="secondary-btn" id="exportBtn"><i data-lucide="download"></i>Export</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr id="inventoryTableHeader"><th scope="col">Item</th><th scope="col">Stock Level</th><th scope="col">Status</th><th scope="col">Last Updated</th></tr></thead>
+                <tbody id="inventoryBody"></tbody>
+              </table>
+            </div>
+            <div class="card-footer">
+              <span id="itemCount">Showing 10 items</span>
+              <button data-page="inventory">View all inventory <i data-lucide="arrow-right"></i></button>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="right-col">
+            <!-- Low Stock Alerts -->
+            <div class="card">
+              <div class="card-header">
+                <div><h3>Low Stock Alerts</h3><p>Items needing attention</p></div>
+                <span class="alert-badge">5</span>
+              </div>
+              <div class="alert-list-wrap" id="alertList"></div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+              <div class="card-header"><div><h3>Quick Actions</h3></div></div>
+              <div class="quick-actions">
+                <button class="quick-action-btn" id="quickAdd"><i data-lucide="circle-plus"></i><span>Add item</span></button>
+                <button class="quick-action-btn" data-page="inward"><i data-lucide="arrow-down-to-line"></i><span>Stock in</span></button>
+                <button class="quick-action-btn" data-page="outward"><i data-lucide="arrow-up-from-line"></i><span>Stock out</span></button>
+                <button class="quick-action-btn" data-page="reports"><i data-lucide="file-chart-column"></i><span>Reports</span></button>
+              </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+              <div class="card-header"><div><h3>Recent Activity</h3><p>Latest stock updates</p></div></div>
+              <div class="activity-list">
+                <div class="activity-item"><div class="activity-icon add"><i data-lucide="arrow-down-to-line"></i></div><p><b>Psychiatric medication</b> stock received<span>+80 packs by Admin</span></p><time>12 min ago</time></div>
+                <div class="activity-item"><div class="activity-icon send"><i data-lucide="arrow-up-from-line"></i></div><p><b>Rice bags (25kg)</b> issued for community kitchen<span>-15 bags by Kavitha</span></p><time>42 min ago</time></div>
+                <div class="activity-item"><div class="activity-icon edit"><i data-lucide="pencil"></i></div><p><b>Yoga mats</b> quantity corrected<span>Updated by Admin</span></p><time>2 hrs ago</time></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Users Section ────────────────────────────── -->
+      <section class="section-users" id="sectionUsers" hidden style="padding: 24px; animation: fadeIn 0.3s ease;">
+        <div class="card">
+          <div class="card-header">
+            <div><h3>User Management</h3><p>Manage admin and staff accounts</p></div>
+            <button class="primary-btn" id="addUserBtn"><i data-lucide="user-plus"></i>Add user</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th scope="col">Username</th><th scope="col">Role</th><th scope="col">Branch</th><th scope="col">Created Date</th><th scope="col" style="text-align:right">Actions</th></tr></thead>
+              <tbody id="usersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Branches Section ────────────────────────────── -->
+      <section class="section-branches" id="sectionBranches" hidden style="padding: 24px; animation: fadeIn 0.3s ease;">
+        <div class="card">
+          <div class="card-header">
+            <div><h3>Branch Management</h3><p>Manage multiple branch locations</p></div>
+            <button class="primary-btn" id="addBranchBtn"><i data-lucide="map-pin"></i>Add branch</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th scope="col">Branch Name</th><th scope="col">Location</th><th scope="col">Address</th><th scope="col" style="text-align:right">Actions</th></tr></thead>
+              <tbody id="branchesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Deletion Requests Section -->
+      <section class="section-requests" id="sectionRequests" hidden style="padding: 24px; animation: fadeIn 0.3s ease;">
+        <div class="view-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <div>
+            <h1 class="view-title">Deletion Requests</h1>
+            <p class="view-subtitle">Manage inventory deletion requests.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:15%">Item</th>
+                  <th style="width:12%">Requested By</th>
+                  <th style="width:20%">Branch</th>
+                  <th style="width:6%">Qty</th>
+                  <th style="width:22%">Reason</th>
+                  <th style="width:10%">Status</th>
+                  <th style="width:10%">Date</th>
+                  <th style="width:5%; text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTableBody">
+                <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-secondary)">Loading requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Section Pages ────────────────────────── -->
+      <section class="section-view" id="sectionView" hidden></section>
+    </main>
+  </div>
+
+  <!-- ─── Modal ──────────────────────────────────── -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Inventory</p><h2 id="modalTitle">Add new item</h2></div>
+        <button class="icon-btn" id="closeModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="addItemForm">
+        <div class="admin-only" style="display:none; flex-direction:column; gap:6px; margin-bottom: 16px;">
+          <label style="font:500 13px 'Inter',sans-serif;color:var(--text)">Branch</label>
+          <select name="branch_id" id="addItemBranch" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font:400 14px 'Inter',sans-serif;background:var(--white)">
+            <option value="" disabled selected>Select Branch</option>
+          </select>
+        </div>
+        <label>Item name<input required name="name" placeholder="e.g. First aid kit"></label>
+        <label>Category<select name="category" id="addItemCategory" required>
+          <option value="" disabled selected>Select Category</option>
+        </select></label>
+        <div class="form-row">
+          <label>Quantity<input required name="stock" type="number" min="0" value="0"></label>
+          <label>Unit<select name="unit"><option>Units</option><option>Boxes</option><option>Bags</option><option>Packs</option><option>Bottles</option><option>Rolls</option></select></label>
+        </div>
+        <label>Minimum stock level<input required name="threshold" type="number" min="0" value="10"></label>
+        <label>Unit price (₹)<input required name="unit_price" type="number" min="0" step="0.01" value="0"></label>
+        <label>Default Supplier (Optional)
+          <input type="text" name="default_supplier" id="addItemSupplierInput"
+            list="supplierDatalist" placeholder="Type or select supplier...">
+          <datalist id="supplierDatalist"></datalist>
+          <span id="addSupplierHint" style="font-size:11px;color:var(--teal);cursor:pointer;margin-top:4px;display:none">
+            + Add "<span id="newSupplierName"></span>" as new supplier
+          </span>
+        </label>
+        <label>Program (Optional)
+          <input type="text" name="program" id="addItemProgramInput"
+            list="programDatalist" placeholder="Type or select program...">
+          <datalist id="programDatalist"></datalist>
+          <span id="addProgramHint" style="font-size:11px;color:var(--teal);cursor:pointer;margin-top:4px;display:none">
+            + Add "<span id="newProgramName"></span>" as new program
+          </span>
+        </label>
+        
+        <div class="form-row">
+          <label class="file-upload-wrapper">
+            <span class="file-label">Product photo (optional)</span>
+            <div class="file-upload-box">
+              <i data-lucide="image" class="file-icon"></i>
+              <span class="file-name">Click to upload image</span>
+            </div>
+            <input type="file" name="productPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileName(this)">
+          </label>
+          <label class="file-upload-wrapper">
+            <span class="file-label">Invoice</span>
+            <div class="file-upload-box">
+              <i data-lucide="file-text" class="file-icon"></i>
+              <span class="file-name">Click to upload invoice</span>
+            </div>
+            <input type="file" name="invoiceCopy" accept="application/pdf" class="file-input-hidden" onchange="updateFileName(this)">
+          </label>
+        </div>
+
+        <div class="modal-actions"><button type="button" class="secondary-btn" id="cancelModal">Cancel</button><button class="primary-btn" type="submit">Add item</button></div>
+      </form>
+    </section>
+  </div>
+
+  <!-- ─── Movement Report Month/Year Picker ─────────── -->
+  <div class="modal-backdrop" id="movementReportModalBackdrop">
+    <section class="modal" style="width:min(360px,90vw)" role="dialog" aria-modal="true" aria-labelledby="movementReportTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Reports</p><h2 id="movementReportTitle">Movement History</h2></div>
+        <button class="icon-btn" id="closeMovementReportModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="movementReportForm" style="display:flex; flex-direction:column; gap:16px; margin-top:20px;">
+        <label>Month
+          <select required id="movementReportMonth">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+        </label>
+        <label>Year
+          <input type="number" required id="movementReportYear" min="2020" max="2099" value="2024">
+        </label>
+        <div class="modal-actions" style="margin-top:8px;">
+          <button type="button" class="secondary-btn" id="cancelMovementReportModal">Cancel</button>
+          <button class="primary-btn" type="submit">Generate Report</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="itemDetailModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="itemDetailTitle" style="width: min(500px, 90vw);">
+      <div class="modal-heading" style="margin-bottom: 16px;">
+        <div><p class="eyebrow" id="itemDetailCategory">Category</p><h2 id="itemDetailTitle">Item Name</h2><div id="itemDetailBranchContainer" style="display:flex; align-items:center; gap:4px; margin-top:4px; font-size:13px; color:var(--text-secondary); display:none;"><i data-lucide="map-pin" style="width:14px; height:14px;"></i><span id="itemDetailBranch"></span></div></div>
+        <div style="display:flex; gap:8px">
+          <button class="icon-btn admin-only" id="editItemBtn" aria-label="Edit item" title="Edit Item"><i data-lucide="pencil"></i></button>
+          <button class="icon-btn admin-only" id="deleteItemBtn" aria-label="Delete item" title="Delete Item"><i data-lucide="trash-2" style="color: var(--danger)"></i></button>
+          <button class="icon-btn staff-only" id="requestDeletionBtn" aria-label="Request Deletion" title="Request Deletion" style="display:none;"><i data-lucide="trash" style="color: var(--amber)"></i></button>
+          <button class="icon-btn" id="closeDetailModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+      <div class="item-detail-content" style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; gap: 16px; align-items: stretch;">
+          <div id="detailProductPhoto" style="width: 120px; height: 120px; border-radius: 8px; background: var(--teal-50); overflow: hidden; flex-shrink: 0; display: grid; place-items: center; border: 1px solid var(--border);"></div>
+          <div style="display: flex; flex-direction: column; justify-content: center; gap: 6px;">
+            <p style="color: var(--text-secondary); font-size: 14px;">Current Stock: <strong id="detailStock" style="color: var(--text); font-size: 16px;"></strong></p>
+            <p style="color: var(--text-secondary); font-size: 14px;">Minimum Threshold: <strong id="detailThreshold" style="color: var(--text);"></strong></p>
+            <p style="color: var(--text-secondary); font-size: 14px;">Added on: <strong id="detailDate" style="color: var(--text)"></strong></p>
+          </div>
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+          <h3 style="font-size: 14px; margin-bottom: 12px; font-weight: 600; color: var(--text);">Attached Documents</h3>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="detailDocuments">
+            <!-- Document buttons injected here via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <!-- ─── Add Entity Modal ────────────────────────── -->
+  <div class="modal-backdrop" id="addEntityModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="addEntityModalTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow" id="addEntityModalEyebrow">Setup</p><h2 id="addEntityModalTitle">Add New</h2></div>
+        <button class="icon-btn" id="closeAddEntityModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="addEntityForm">
+        <input type="hidden" id="addEntityType" name="type">
+        <label>Name<input required name="name" id="addEntityName" placeholder="e.g. New Supplier"></label>
+        <label>Description (Optional)<textarea name="description" id="addEntityDescription" rows="3" placeholder="Enter description..."></textarea></label>
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" id="cancelAddEntityModal">Cancel</button>
+          <button class="primary-btn" type="submit" id="addEntitySubmitBtn">Save</button>
+        </div>
+      </form>
+    </section>
+  </div>
+  <!-- ─── Edit Entity Modal ───────────────────────── -->
+  <div class="modal-backdrop" id="editEntityModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="editEntityModalTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow" id="editEntityModalEyebrow">Setup</p><h2 id="editEntityModalTitle">Edit</h2></div>
+        <button class="icon-btn" id="closeEditEntityModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="editEntityForm">
+        <input type="hidden" id="editEntityType" name="type">
+        <input type="hidden" id="editEntityId" name="id">
+        <label>Name<input required name="name" id="editEntityName"></label>
+        <label>Description (Optional)<textarea name="description" id="editEntityDescription" rows="3"></textarea></label>
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" id="cancelEditEntityModal">Cancel</button>
+          <button class="primary-btn" type="submit" id="editEntitySubmitBtn">Save Changes</button>
+        </div>
+      </form>
+    </section>
+  </div>
+  <!-- ─── Edit Item Modal ────────────────────────── -->
+  <div class="modal-backdrop" id="editItemModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Inventory</p><h2 id="editModalTitle">Edit Item</h2></div>
+        <button class="icon-btn" id="closeEditModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="editItemForm">
+        <input type="hidden" name="itemId" id="editItemId">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="admin-only" style="display:none; flex-direction:column; gap:6px;">
+            <label style="font:500 13px 'Inter',sans-serif;color:var(--text)">Branch</label>
+            <select name="branch_id" id="editItemBranch" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font:400 14px 'Inter',sans-serif;background:var(--white)" required>
+              <option value="" disabled selected>Select Branch</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label>Item name<input required name="name" id="editName" placeholder="e.g. First aid kit"></label>
+            <label>Category<select name="category" id="editCategory">
+              <option>Clinical &amp; Pharma</option>
+              <option>Program materials</option>
+              <option>Food &amp; nutrition</option>
+              <option>Vocational &amp; Care</option>
+              <option>School &amp; Education</option>
+              <option>Farming &amp; Dairy</option>
+            </select></label>
+            <div class="form-row">
+              <label>Unit<select name="unit" id="editUnit"><option>Units</option><option>Boxes</option><option>Bags</option><option>Packs</option><option>Bottles</option><option>Rolls</option></select></label>
+              <label>Minimum stock level<input required name="threshold" id="editThreshold" type="number" min="0"></label>
+              <label>Unit price (₹)<input required name="unit_price" id="editUnitPrice" type="number" min="0" step="0.01"></label>
+            </div>
+            <div class="form-row">
+              <label>Default Supplier (Optional)
+                <input type="text" name="default_supplier" id="editItemSupplierInput"
+                  list="supplierDatalist" placeholder="Type or select supplier...">
+                <span id="editSupplierHint" style="font-size:11px;color:var(--teal);cursor:pointer;margin-top:4px;display:none">
+                  + Add "<span id="editNewSupplierName"></span>" as new supplier
+                </span>
+              </label>
+              <label>Program (Optional)
+                <input type="text" name="program" id="editItemProgramInput"
+                  list="programDatalist" placeholder="Type or select program...">
+                <span id="editProgramHint" style="font-size:11px;color:var(--teal);cursor:pointer;margin-top:4px;display:none">
+                  + Add "<span id="editNewProgramName"></span>" as new program
+                </span>
+              </label>
+            </div>
+            <div style="padding:12px; background:var(--bg-alt); border-radius:6px; margin-bottom:16px;">
+              <p style="font-size:12px; color:var(--text-secondary); margin:0 0 8px;">Upload new files below to replace existing ones. Leave empty to keep existing files.</p>
+              <div class="form-row">
+                <label class="file-upload-wrapper">
+                  <span class="file-label">Product photo (optional)</span>
+                  <div class="file-upload-box">
+                    <i data-lucide="image" class="file-icon"></i>
+                    <span class="file-name">Click to upload new image</span>
+                  </div>
+                  <input type="file" name="productPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileName(this)">
+                </label>
+                <label class="file-upload-wrapper">
+                  <span class="file-label">Invoice</span>
+                  <div class="file-upload-box">
+                    <i data-lucide="file-text" class="file-icon"></i>
+                    <span class="file-name">Click to upload new invoice</span>
+                  </div>
+                  <input type="file" name="invoiceCopy" accept="application/pdf" class="file-input-hidden" onchange="updateFileName(this)">
+                </label>
+              </div>
+            </div>
+            <div class="modal-actions"><button type="button" class="secondary-btn" id="cancelEditModal">Cancel</button><button class="primary-btn" type="submit">Save Changes</button></div>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- ─── Add User Modal ────────────────────────── -->
+  <div class="modal-backdrop" id="addUserModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="addUserTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Settings</p><h2 id="addUserTitle">Add User</h2></div>
+        <button class="icon-btn" id="closeAddUserModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="addUserForm" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex;flex-direction:column;gap:6px;" class="admin-only">
+          <label style="font:500 13px 'Inter',sans-serif;color:var(--text)">Branch</label>
+          <select name="branch_id" id="addUserBranch" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font:400 14px 'Inter',sans-serif;background:var(--white)" required>
+            <option value="" disabled selected>Select Branch</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <i data-lucide="user" class="input-icon"></i>
+          <input type="text" required name="username" placeholder="Username (e.g. staff@msctrust.org)">
+        </div>
+        <div class="input-group">
+          <i data-lucide="shield" class="input-icon"></i>
+          <select name="role" id="addUserRole">
+            <option value="Staff">Staff Role</option>
+            <option value="Admin">Admin Role</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <i data-lucide="lock" class="input-icon"></i>
+          <input type="password" required name="password" id="addUserPassword" placeholder="Password (Minimum 8 chars)">
+        </div>
+        <div class="modal-actions" style="margin-top:8px;"><button type="button" class="secondary-btn" id="cancelAddUserModal">Cancel</button><button class="primary-btn" type="submit">Create User</button></div>
+      </form>
+    </section>
+  </div>
+
+  <!-- ─── Edit User Modal ────────────────────────── -->
+  <div class="modal-backdrop" id="editUserModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="editUserTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Settings</p><h2 id="editUserTitle">Edit User</h2></div>
+        <button class="icon-btn" id="closeEditUserModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="editUserForm" style="display:flex; flex-direction:column; gap:16px;">
+        <input type="hidden" name="userId" id="editUserId">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font:500 13px 'Inter',sans-serif;color:var(--text)">Branch (Required for Staff)</label>
+          <select name="branch_id" id="editUserBranch" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font:400 14px 'Inter',sans-serif;background:var(--white)">
+            <option value="" disabled selected>Select Branch</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <i data-lucide="user" class="input-icon"></i>
+          <input type="text" required name="username" id="editUserUsername" placeholder="Username">
+        </div>
+        <div class="input-group">
+          <i data-lucide="shield" class="input-icon"></i>
+          <select name="role" id="editUserRole">
+            <option value="Staff">Staff Role</option>
+            <option value="Admin">Admin Role</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <i data-lucide="lock" class="input-icon"></i>
+          <input type="password" name="password" id="editUserPassword" placeholder="New Password (Optional)">
+        </div>
+        <div class="modal-actions" style="margin-top:8px;"><button type="button" class="secondary-btn" id="cancelEditUserModal">Cancel</button><button class="primary-btn" type="submit">Save Changes</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="documentViewerModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="documentViewerTitle" style="width: min(800px, 95vw); max-height: 90vh; padding: 20px;">
+      <div class="modal-heading" style="margin-bottom: 12px;">
+        <h2 id="documentViewerTitle" style="font-size: 16px;">Document Viewer</h2>
+        <div style="display:flex; gap:8px">
+          <a id="documentDownloadBtn" href="#" target="_blank" download class="icon-btn" aria-label="Download"><i data-lucide="download"></i></a>
+          <button class="icon-btn" id="closeDocumentViewer" aria-label="Close viewer"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+      <div id="documentViewerContent" style="width: 100%; height: 65vh; background: var(--bg-alt); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+        <!-- Image or iframe injected here -->
+      </div>
+    </section>
+  </div>
+
+  <!-- ─── Add Branch Modal ────────────────────────── -->
+  <div class="modal-backdrop" id="addBranchModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="addBranchTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Organization</p><h2 id="addBranchTitle">Add Branch</h2></div>
+        <button class="icon-btn" id="closeAddBranchModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="addBranchForm" style="display:flex; flex-direction:column; gap:16px;">
+        <label>Branch Name<input required name="name" type="text" placeholder="e.g. Central Warehouse"></label>
+        <label>Location<input name="location" type="text" placeholder="e.g. City Name"></label>
+        <label>Address<textarea name="address" rows="2" placeholder="Full address..."></textarea></label>
+        <label>Pincode<input name="pincode" type="text" placeholder="e.g. 110001"></label>
+        <div class="modal-actions" style="margin-top:8px;">
+          <button type="button" class="secondary-btn" id="cancelAddBranchModal">Cancel</button>
+          <button class="primary-btn" type="submit">Create Branch</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- ─── Edit Branch Modal ────────────────────────── -->
+  <div class="modal-backdrop" id="editBranchModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="editBranchTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Organization</p><h2 id="editBranchTitle">Edit Branch</h2></div>
+        <button class="icon-btn" id="closeEditBranchModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="editBranchForm" style="display:flex; flex-direction:column; gap:16px;">
+        <label>Branch Name<input required name="name" id="editBranchName" type="text"></label>
+        <label>Location<input name="location" id="editBranchLocation" type="text"></label>
+        <label>Address<textarea name="address" id="editBranchAddress" rows="2"></textarea></label>
+        <label>Pincode<input name="pincode" id="editBranchPincode" type="text"></label>
+        <div class="modal-actions" style="margin-top:8px;">
+          <button type="button" class="secondary-btn" id="cancelEditBranchModal">Cancel</button>
+          <button class="primary-btn" type="submit">Save Changes</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- ─── Transfer Stock Modal ────────────────────────── -->
+  <div class="modal-backdrop" id="transferStockModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="transferModalTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Inventory Transfer</p><h2 id="transferModalTitle">Transfer Stock</h2></div>
+        <button class="icon-btn" id="closeTransferModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="transferStockForm" style="display:flex; flex-direction:column; gap:16px;">
+        <label>Item
+          <select required name="inventory_id" id="transferItemSelect">
+            <option value="">Select an item...</option>
+          </select>
+        </label>
+        <div class="form-row">
+          <label>Source Branch
+            <select required name="source_branch_id" id="transferSourceBranch">
+              <option value="" disabled selected>Select Source...</option>
+            </select>
+          </label>
+          <label>Destination Branch
+            <select required name="destination_branch_id" id="transferDestinationBranch">
+              <option value="" disabled selected>Select Destination...</option>
+            </select>
+          </label>
+        </div>
+        <label>Quantity to Transfer
+          <input required name="quantity" type="number" min="1" value="1">
+        </label>
+        <div class="modal-actions" style="margin-top:8px;">
+          <button type="button" class="secondary-btn" id="cancelTransferModal">Cancel</button>
+          <button class="primary-btn" type="submit">Complete Transfer</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- ─── Add Movement Modal ────────────────────────── -->
+  <div class="modal-backdrop" id="addMovementModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="movementModalTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow" id="movementModalEyebrow">Stock Entry</p><h2 id="movementModalTitle">Add Movement</h2></div>
+        <button class="icon-btn" id="closeMovementModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="addMovementForm">
+        <input type="hidden" name="type" id="movementType">
+        <div id="movementBranchContainer" style="display:flex; flex-direction:column; gap:6px; margin-bottom: 16px;">
+          <label style="font:500 13px 'Inter',sans-serif;color:var(--text)">Branch</label>
+          <select name="branch_id" id="addMovementBranch" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font:400 14px 'Inter',sans-serif;background:var(--white)">
+            <option value="" disabled selected>Select Branch</option>
+          </select>
+        </div>
+        
+        <label>Item<select required name="inventory_id" id="movementItemSelect">
+          <option value="">Select an item...</option>
+        </select></label>
+        
+        <div class="form-row">
+          <label>Quantity<input required name="quantity" type="number" min="1" value="1"></label>
+          <div id="movementPartyLabel">
+            <!-- For INWARD — supplier dropdown -->
+            <div id="supplierField" style="display:none">
+              <label>Supplier
+                <select name="party_name" id="movementSupplierSelect">
+                  <option value="">Select supplier...</option>
+                </select>
+              </label>
+            </div>
+            <!-- For OUTWARD — program dropdown -->
+            <div id="programField" style="display:none">
+              <label>Issued To (Program - Optional)
+                <select name="party_name" id="movementProgramSelect">
+                  <option value="">Select program...</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <div id="recipientField" style="display:none">
+          <label>Recipient (who received this - Optional)
+            <input type="text" name="recipient_name" id="movementRecipientInput" placeholder="e.g. John Doe, Partner NGO...">
+          </label>
+        </div>
+        
+        <div id="inwardFilesField" style="display:none; padding:12px; background:var(--bg-alt); border-radius:6px; margin-bottom:16px;">
+          <p style="font-size:12px; color:var(--text-secondary); margin:0 0 8px;">Upload files to attach to this item.</p>
+          <div class="form-row">
+            <label class="file-upload-wrapper">
+              <span class="file-label">Product photo (optional)</span>
+              <div class="file-upload-box">
+                <i data-lucide="image" class="file-icon"></i>
+                <span class="file-name">Click to upload image</span>
+              </div>
+              <input type="file" name="productPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileName(this)">
+            </label>
+            <label class="file-upload-wrapper">
+              <span class="file-label">Invoice (optional)</span>
+              <div class="file-upload-box">
+                <i data-lucide="file-text" class="file-icon"></i>
+                <span class="file-name">Click to upload invoice</span>
+              </div>
+              <input type="file" name="invoiceCopy" accept="application/pdf" class="file-input-hidden" onchange="updateFileName(this)">
+            </label>
+          </div>
+        </div>
+        
+
+        
+        <label>Notes (Optional)<textarea name="notes" rows="2" placeholder="Any additional details..."></textarea></label>
+        
+        <div class="modal-actions"><button type="button" class="secondary-btn" id="cancelMovementModal">Cancel</button><button class="primary-btn" type="submit" id="movementSubmitBtn">Submit Entry</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div id="toastContainer" role="status" aria-live="polite"></div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <button class="fab" id="fabAdd" aria-label="Add new item"><i data-lucide="plus"></i></button>
+
+  <!-- FIX 3: Added custom confirmation modal -->
+  <div class="modal-backdrop" id="confirmModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" style="width:min(360px,90vw)">
+      <div class="modal-heading" style="margin-bottom:16px">
+        <div><p class="eyebrow">Confirm action</p><h2 id="confirmModalTitle">Are you sure?</h2></div>
+      </div>
+      <p id="confirmModalMessage" style="font-size:14px;color:var(--text-secondary);margin-bottom:24px"></p>
+      <div class="modal-actions">
+        <button class="secondary-btn" id="confirmModalCancel">Cancel</button>
+        <button class="primary-btn" id="confirmModalOk" style="background:var(--danger,#dc2626);border-color:var(--danger,#dc2626)">Delete</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Custom Info Modal for long notes -->
+  <div class="modal-backdrop" id="infoModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle" style="width:min(400px,90vw)">
+      <div class="modal-heading" style="margin-bottom:16px">
+        <div><p class="eyebrow">Details</p><h2 id="infoModalTitle">Notes</h2></div>
+        <button class="icon-btn" id="infoModalCloseIcon" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <div id="infoModalMessage" style="font-size:14px;color:var(--text-secondary);margin-bottom:24px;white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow-y:auto;"></div>
+      <div class="modal-actions">
+        <button class="secondary-btn" id="infoModalCloseBtn">Close</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ─── Bulk Import Modal ────────────────────────────── -->
+  <div class="modal-backdrop" id="bulkImportModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="bulkImportModalTitle">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Inventory Management</p><h2 id="bulkImportModalTitle">Bulk Import</h2></div>
+        <button class="icon-btn" id="closeBulkImportModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      
+      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+        Upload a spreadsheet (.xlsx or .csv) to add or update multiple inventory items at once. Items are matched by <strong>Item Name</strong> and <strong>Branch Name</strong>.
+      </p>
+      
+      <div style="margin-bottom: 24px;">
+        <button type="button" id="downloadBulkTemplateBtn" class="secondary-btn" style="display: inline-flex; text-decoration: none;">
+          <i data-lucide="download"></i> Download Template
+        </button>
+      </div>
+
+      <form id="bulkImportForm" style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label style="display:block; margin-bottom:8px; font-size:13px; font-weight:600; color:var(--text);">Target Branch (Optional)</label>
+          <select id="bulkImportBranchSelect" name="branch_id" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--white); color:var(--text);">
+            <option value="">Read from spreadsheet ("Branch Name" column)</option>
+          </select>
+          <p style="font-size:11px; color:var(--text-light); margin-top:4px;">If selected, all items will be imported into this branch and the spreadsheet column will be ignored.</p>
+        </div>
+        <div class="file-upload-wrapper">
+          <label class="file-upload-box">
+            <i data-lucide="upload-cloud" style="width:32px; height:32px; color:var(--primary); margin-bottom:12px;"></i>
+            <span style="font-weight:600; color:var(--text); margin-bottom:4px;">Upload Spreadsheet</span>
+            <span style="font-size:12px; color:var(--text-light); text-align:center;">Select .xlsx or .csv file</span>
+            <input required type="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="opacity: 0; position: absolute; width: 100%; height: 100%; cursor: pointer;">
+          </label>
+          <p id="bulkImportFileName" style="text-align: center; margin-top: 8px; font-size: 13px; color: var(--primary);"></p>
+        </div>
+        
+        <div id="bulkImportResults" style="display:none; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--text);">Import Summary</h4>
+          <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+            <div style="flex: 1; padding: 12px; background: #ecfdf5; color: #065f46; border-radius: 6px; text-align: center;">
+              <div style="font-size: 24px; font-weight: 700;" id="bulkAddedCount">0</div>
+              <div style="font-size: 12px;">Added</div>
+            </div>
+            <div style="flex: 1; padding: 12px; background: #eff6ff; color: #1e40af; border-radius: 6px; text-align: center;">
+              <div style="font-size: 24px; font-weight: 700;" id="bulkUpdatedCount">0</div>
+              <div style="font-size: 12px;">Updated</div>
+            </div>
+          </div>
+          <div id="bulkErrorsContainer" style="display: none;">
+            <p style="font-size: 13px; font-weight: 600; color: var(--danger); margin-bottom: 8px;">Skipped Rows:</p>
+            <ul id="bulkErrorsList" style="font-size: 12px; color: var(--danger); margin: 0; padding-left: 16px; max-height: 120px; overflow-y: auto;"></ul>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 8px;">
+          <button type="button" class="secondary-btn" id="cancelBulkImportModal">Close</button>
+          <button class="primary-btn" type="submit" id="bulkImportSubmitBtn">Upload & Process</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- Deletion Request Modal -->
+  <div class="modal-backdrop" id="deletionRequestModalBackdrop">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="delReqModalTitle">
+      <div class="modal-heading">
+        <div><h2 id="delReqModalTitle">Request Deletion</h2></div>
+        <button class="icon-btn" id="closeDeletionRequestModal" aria-label="Close modal"><i data-lucide="x"></i></button>
+      </div>
+      <form id="deletionRequestForm" style="display:flex; flex-direction:column; gap:16px;">
+        <input type="hidden" id="delReqItemId">
+        <input type="hidden" id="delReqMaxStock">
+        
+        <div class="form-row">
+          <label style="flex: 2">Reason for deletion
+            <select id="delReqReason" required name="reason">
+              <option value="">Select a reason...</option>
+              <option value="mistake">Mistake / Data Entry Error</option>
+              <option value="scrap">Scrap / Damaged / Expired</option>
+              <option value="resale">Resale</option>
+              <option value="other">Other (please specify)</option>
+            </select>
+          </label>
+          <label style="flex: 1">Quantity
+            <input type="number" id="delReqQuantity" required min="1" step="1">
+          </label>
+        </div>
+
+        <div id="delReqPriceWrapper" style="display:none;">
+          <label>Resale Price (₹)
+            <input type="number" id="delReqPrice" min="0" step="0.01" placeholder="e.g. 500">
+          </label>
+        </div>
+
+        <div id="delReqDetailsWrapper" style="display:none;">
+          <label for="delReqDetails" id="delReqDetailsLabel" style="display:block; margin-bottom:4px;">Details</label>
+          <textarea id="delReqDetails" rows="3" placeholder="Enter details..." style="width:100%"></textarea>
+        </div>
+
+        <div class="modal-actions" style="margin-top:8px;">
+          <button type="button" class="secondary-btn" id="cancelDeletionRequestModal">Cancel</button>
+          <button class="primary-btn" type="submit">Submit Request</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+</body>
+</html>

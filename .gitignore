@@ -1,0 +1,24 @@
+# Node Modules
+node_modules/
+npm-debug.log
+
+# Environment Variables (Secrets)
+.env
+
+# Database Files
+# We only want to commit schema.sql, not the actual live runtime databases.
+database/*.db
+database/*.sqlite
+database/*.db-shm
+database/*.db-wal
+
+# User Uploaded Media
+uploads/
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
