@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "migrate": "node migrate-db.js && node migrate-files.js"
+    "init-db": "node init-db.js"
   },
   "repository": {
     "type": "git",

@@ -58,14 +58,12 @@ Open `.env` and set a strong, random `JWT_SECRET`.
 ### 4. Initialize the Database (CRITICAL)
 Before starting the server for the first time, you **must** initialize the SQLite database schema:
 ```bash
-cd ..
-sqlite3 database/database.db < database/schema.sql
+npm run init-db
 ```
-*(If you do not have the `sqlite3` CLI installed, you can open `database/schema.sql` in a database GUI tool like DB Browser for SQLite or DBeaver, connect it to a new file named `database/database.db`, and execute the SQL script).*
+*(This uses a cross-platform Node script that will automatically generate the database file correctly, without needing the `sqlite3` CLI installed).*
 
 ### 5. Start the Server
 ```bash
-cd backend
 npm start
 ```
 The application will now be running at [http://localhost:3000](http://localhost:3000).
