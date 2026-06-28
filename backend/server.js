@@ -48,7 +48,7 @@ app.use('/api/branches', branchesRoutes);
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // 404 Catch-all for API
-app.use('/api/*', (req, res) => {
+app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
