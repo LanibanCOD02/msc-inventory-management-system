@@ -957,5 +957,33 @@
     </section>
   </div>
 
+<div id="setupScreen" style="display:none;" class="login-wrapper">
+  <div class="login-split">
+    <div class="login-left">
+      <h1>Promoting Mental Health.</h1>
+      <p>Mental Health for All.</p>
+    </div>
+    <div class="login-right">
+      <img src="img/logo.jpg" alt="MS Chellamuthu Trust" style="height:64px;margin-bottom:16px;">
+      <h2>First-Time Setup</h2>
+      <p>Create the first Admin account to get started</p>
+      <form id="setupForm">
+        <div class="login-input-wrap">
+          <i data-lucide="user"></i>
+          <input type="text" name="username" required placeholder="Admin username or email">
+        </div>
+        <div class="login-input-wrap">
+          <i data-lucide="lock"></i>
+          <input type="password" name="password" id="setupPassword" required placeholder="Create a password" minlength="8">
+        </div>
+        <div class="login-input-wrap">
+          <i data-lucide="lock"></i>
+          <input type="password" id="setupConfirmPassword" required placeholder="Confirm password" minlength="8">
+        </div>
+        <button type="submit" class="login-btn">Create Admin Account</button>
+      </form>
+    </div>
+  </div>
+</div>
 </body>
 </html>

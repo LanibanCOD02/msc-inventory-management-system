@@ -1261,6 +1261,66 @@ if(document.getElementById("documentViewerModalBackdrop")) {
   //   });
 }
 
+// FIRST-TIME SETUP CHECK
+async function checkSetupRequired() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/setup-required`);
+    const result = await res.json();
+    if (result.setupRequired) {
+      localStorage.removeItem('msc_token');
+      localStorage.removeItem('msc_user');
+      
+      document.getElementById('appShell').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'flex';
+      
+      // Add a CSS rule to force hide the login screen if apiFetch 401 tries to show it
+      const style = document.createElement('style');
+      style.innerHTML = '#loginScreen { display: none !important; }';
+      document.head.appendChild(style);
+      
+      lucide.createIcons();
+      return true;
+    }
+  } catch (err) {
+    console.error('Setup check failed:', err);
+  }
+  return false;
+}
+checkSetupRequired();
+
+// Setup form submit handler
+document.getElementById('setupForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('setupPassword').value;
+  const confirmPassword = document.getElementById('setupConfirmPassword').value;
+  if (password !== confirmPassword) {
+    alert('Passwords do not match.');
+    return;
+  }
+  const d = new FormData(e.target);
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'Creating account...';
+  submitBtn.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/auth/setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: d.get('username'), password })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Setup failed');
+    alert('Admin account created! You can now log in.');
+    window.location.reload(); // Reload to remove the CSS override and show login
+  } catch (err) {
+    alert('Setup failed: ' + err.message);
+  } finally {
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+  }
+});
+
 // ─── Login Form Submission ───────────────────────
 document.getElementById("loginForm").addEventListener("submit", async e => {
   e.preventDefault();

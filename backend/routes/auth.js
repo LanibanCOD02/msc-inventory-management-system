@@ -174,4 +174,41 @@ router.delete('/users/:id', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
+// GET /api/auth/setup-required
+// Returns true only if there are zero users in the database
+router.get('/setup-required', (req, res) => {
+  try {
+    const count = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    res.json({ setupRequired: count.count === 0 });
+  } catch (error) {
+    console.error('Setup check error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/auth/setup
+// Creates the first Admin user
+router.post('/setup', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+
+    const count = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    if (count.count > 0) return res.status(403).json({ error: 'Setup already complete' });
+
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(password, saltRounds);
+    const id = generateUUID();
+    const created_at = new Date().toISOString();
+
+    db.prepare('INSERT INTO users (id, username, password_hash, role, branch_id, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(id, username, password_hash, 'Admin', null, created_at);
+
+    res.json({ success: true, message: 'Admin account created' });
+  } catch (error) {
+    console.error('Setup error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
