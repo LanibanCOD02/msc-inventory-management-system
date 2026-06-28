@@ -21,7 +21,8 @@ router.post('/', authenticateToken, cpUpload, async (req, res) => {
   try {
     const uploadedUrls = {};
     const files = req.files || {};
-    const dataDir = process.env.DATA_DIR || path.join(__dirname, '..');
+    // Fix: Go up two directories from routes/ to reach the project root
+    const dataDir = process.env.DATA_DIR || path.join(__dirname, '..', '..');
     
     if (req.files.productPhoto) {
         const file = req.files.productPhoto[0];
