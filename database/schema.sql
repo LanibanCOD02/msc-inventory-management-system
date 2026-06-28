@@ -1,4 +1,4 @@
-CREATE TABLE branches (
+CREATE TABLE IF NOT EXISTS branches (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       location TEXT,
@@ -7,7 +7,7 @@ CREATE TABLE branches (
       created_at TEXT
     , deleted_at TEXT);
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       username TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE users (
       branch_id TEXT
     );
 
-CREATE TABLE inventory_items (
+CREATE TABLE IF NOT EXISTS inventory_items (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       category TEXT,
@@ -34,7 +34,7 @@ CREATE TABLE inventory_items (
       branch_id TEXT NOT NULL
     );
 
-CREATE TABLE inventory_movements (
+CREATE TABLE IF NOT EXISTS inventory_movements (
       id TEXT PRIMARY KEY,
       reference_code TEXT,
       item_id TEXT NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE inventory_movements (
       branch_id TEXT NOT NULL
     , transfer_id TEXT, recipient_name TEXT);
 
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       description TEXT,
@@ -58,7 +58,7 @@ CREATE TABLE categories (
       branch_id TEXT
     );
 
-CREATE TABLE suppliers (
+CREATE TABLE IF NOT EXISTS suppliers (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       description TEXT,
@@ -67,7 +67,7 @@ CREATE TABLE suppliers (
       branch_id TEXT
     );
 
-CREATE TABLE programs (
+CREATE TABLE IF NOT EXISTS programs (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       description TEXT,
@@ -76,7 +76,7 @@ CREATE TABLE programs (
       branch_id TEXT
     );
 
-CREATE TABLE deletion_requests (
+CREATE TABLE IF NOT EXISTS deletion_requests (
     id TEXT PRIMARY KEY,
     item_id TEXT NOT NULL,
     requested_by TEXT NOT NULL,
