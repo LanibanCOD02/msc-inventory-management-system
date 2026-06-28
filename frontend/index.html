@@ -960,28 +960,50 @@
 <div id="setupScreen" style="display:none;" class="login-wrapper">
   <div class="login-split">
     <div class="login-left">
-      <h1>Promoting Mental Health.</h1>
-      <p>Mental Health for All.</p>
+      <div class="login-mission-content">
+        <h1 class="mission-title">Promoting Mental Health.</h1>
+        <p class="mission-subtitle">Mental Health for All.</p>
+        <div style="display:flex;gap:32px;margin-top:48px" class="login-stats">
+          <div>
+            <h3 style="font:700 28px 'Outfit',sans-serif;color:#fff;margin:0">6+</h3>
+            <p style="font-size:12px;color:rgba(255,255,255,0.65);margin:4px 0 0">Programs</p>
+          </div>
+          <div>
+            <h3 style="font:700 28px 'Outfit',sans-serif;color:#fff;margin:0">1,200+</h3>
+            <p style="font-size:12px;color:rgba(255,255,255,0.65);margin:4px 0 0">Items tracked</p>
+          </div>
+          <div>
+            <h3 style="font:700 28px 'Outfit',sans-serif;color:#fff;margin:0">4</h3>
+            <p style="font-size:12px;color:rgba(255,255,255,0.65);margin:4px 0 0">Departments</p>
+          </div>
+        </div>
+      </div>
     </div>
+    
     <div class="login-right">
-      <img src="img/logo.jpg" alt="MS Chellamuthu Trust" style="height:64px;margin-bottom:16px;">
-      <h2>First-Time Setup</h2>
-      <p>Create the first Admin account to get started</p>
-      <form id="setupForm">
-        <div class="login-input-wrap">
-          <i data-lucide="user"></i>
-          <input type="text" name="username" required placeholder="Admin username or email">
+      <div class="login-form-container">
+        <div class="login-header">
+          <img src="img/logo.jpg" alt="M.S. Chellamuthu Trust & Research Foundation" class="login-brand-logo" />
+          <h2>First-Time Setup</h2>
+          <p>Create the first Admin account to get started</p>
         </div>
-        <div class="login-input-wrap">
-          <i data-lucide="lock"></i>
-          <input type="password" name="password" id="setupPassword" required placeholder="Create a password" minlength="8">
-        </div>
-        <div class="login-input-wrap">
-          <i data-lucide="lock"></i>
-          <input type="password" id="setupConfirmPassword" required placeholder="Confirm password" minlength="8">
-        </div>
-        <button type="submit" class="login-btn">Create Admin Account</button>
-      </form>
+        
+        <form id="setupForm">
+          <div class="login-input-wrap">
+            <i data-lucide="user"></i>
+            <input type="text" name="username" required placeholder="Admin username or email">
+          </div>
+          <div class="login-input-wrap">
+            <i data-lucide="lock"></i>
+            <input type="password" name="password" id="setupPassword" required placeholder="Create a password" minlength="8">
+          </div>
+          <div class="login-input-wrap">
+            <i data-lucide="lock"></i>
+            <input type="password" id="setupConfirmPassword" required placeholder="Confirm password" minlength="8">
+          </div>
+          <button type="submit" class="login-btn">Create Admin Account</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
