@@ -22,6 +22,24 @@ try {
   // Execute schema
   db.exec(schema);
   
+  // Seed 4 default categories if empty
+  const count = db.prepare('SELECT COUNT(*) as count FROM categories').get();
+  if (count.count === 0) {
+    const crypto = require('crypto');
+    const insertCat = db.prepare('INSERT INTO categories (id, name, created_at) VALUES (?, ?, ?)');
+    const defaultCategories = ['Clinical & Pharma', 'Program materials', 'Food & nutrition', 'School & Education'];
+    const now = new Date().toISOString();
+    
+    // Use a transaction for bulk insert
+    const insertMany = db.transaction((cats) => {
+      for (const cat of cats) {
+        insertCat.run(crypto.randomUUID(), cat, now);
+      }
+    });
+    insertMany(defaultCategories);
+    console.log('✅ Seeded 4 default categories.');
+  }
+
   console.log('✅ Database initialized successfully!');
   console.log(`Database location: ${dbPath}`);
 } catch (error) {
