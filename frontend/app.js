@@ -53,7 +53,8 @@ async function apiFetch(endpoint, options = {}) {
     ...options.headers
   };
   
-  const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+  // FIX: Add cache: 'no-store' to prevent browser from aggressively caching GET responses!
+  const response = await fetch(`${API_BASE}${endpoint}`, { cache: 'no-store', ...options, headers });
   if (!response.ok) {
     // FIX 2: Session expiry handling in apiFetch
     if (response.status === 401) {
