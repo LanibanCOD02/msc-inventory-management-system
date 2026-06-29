@@ -63,7 +63,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // POST /api/movements
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { inventory_id, type, quantity, party_name, reference_code, notes, branch_id, recipient_name, product_photo_url, invoice_pdf_url } = req.body;
+    const { inventory_id, type, quantity, party_name, reference_code, notes, branch_id, recipient_name, product_photo_url, invoice_pdf_url, total_price } = req.body;
     
     const qty = Number(quantity);
     if (!qty || qty <= 0) return res.status(400).json({ error: 'Quantity must be positive' });
@@ -87,9 +87,9 @@ router.post('/', authenticateToken, async (req, res) => {
       const moveId = generateUUID();
       
       db.prepare(`
-        INSERT INTO inventory_movements (id, reference_code, item_id, movement_type, quantity, party_name, created_by, branch_id, created_at, recipient_name) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(moveId, refCode, inventory_id, movement_type, qty, party_name || null, req.user.id, resolvedBranchId || null, new Date().toISOString(), recipient_name || null);
+        INSERT INTO inventory_movements (id, reference_code, item_id, movement_type, quantity, party_name, created_by, branch_id, created_at, recipient_name, total_price) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(moveId, refCode, inventory_id, movement_type, qty, party_name || null, req.user.id, resolvedBranchId || null, new Date().toISOString(), recipient_name || null, total_price || null);
 
       // Adjust stock and file URLs if INWARD
       let updateSql = 'UPDATE inventory_items SET stock = stock + ?';
@@ -97,6 +97,20 @@ router.post('/', authenticateToken, async (req, res) => {
       if (movement_type === 'IN') {
         if (product_photo_url) { updateSql += ', product_photo_url = ?'; updateParams.push(product_photo_url); }
         if (invoice_pdf_url) { updateSql += ', invoice_pdf_url = ?'; updateParams.push(invoice_pdf_url); }
+        
+        if (total_price && !isNaN(Number(total_price))) {
+          const currentStock = item.stock || 0;
+          const currentUnitPrice = item.unit_price || 0;
+          const tp = Number(total_price);
+          
+          // Calculate new weighted average unit price
+          // ((existing_stock * existing_unit_price) + total_price) / (existing_stock + new_quantity)
+          const newStock = currentStock + qty;
+          const newUnitPrice = ((currentStock * currentUnitPrice) + tp) / newStock;
+          
+          updateSql += ', unit_price = ?';
+          updateParams.push(Number(newUnitPrice.toFixed(2))); // Round to 2 decimal places
+        }
       }
       updateSql += ' WHERE id = ?';
       updateParams.push(inventory_id);

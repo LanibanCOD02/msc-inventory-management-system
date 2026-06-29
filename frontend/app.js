@@ -1777,6 +1777,8 @@ if (movementModal) {
     if (recipientField) recipientField.style.display = isIn ? 'none' : 'block';
     const inwardFilesField = document.getElementById('inwardFilesField');
     if (inwardFilesField) inwardFilesField.style.display = isIn ? 'block' : 'none';
+    const totalPriceField = document.getElementById('totalPriceField');
+    if (totalPriceField) totalPriceField.style.display = isIn ? 'block' : 'none';
 
     // Set the correct select as required
     document.getElementById('movementSupplierSelect').required = isIn;

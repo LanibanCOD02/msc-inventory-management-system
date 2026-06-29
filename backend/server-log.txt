@@ -1,0 +1,20 @@
+======================================================== 
+Starting MS Chellamuthu Trust Inventory Server at 28-06-2026 22.30.09.41 
+◇ injected env (2) from ..\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+Server is running on port 3000
+======================================================== 
+Starting MS Chellamuthu Trust Inventory Server at 28-06-2026 22.32.22.92 
+◇ injected env (2) from ..\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+Server is running on port 3000
+^C======================================================== 
+Starting MS Chellamuthu Trust Inventory Server at 28-06-2026 22.33.12.37 
+◇ injected env (2) from ..\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+Server is running on port 3000
+======================================================== 
+Starting MS Chellamuthu Trust Inventory Server at 28-06-2026 23.20.15.32 
+◇ injected env (2) from ..\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+Server is running on port 3000
+^C======================================================== 
+Starting MS Chellamuthu Trust Inventory Server at 29-06-2026 19.24.32.96 
+◇ injected env (2) from ..\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+Server is running on port 3000

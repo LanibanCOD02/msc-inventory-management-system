@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS inventory_movements (
       voided_at TEXT,
       voided_by TEXT,
       branch_id TEXT NOT NULL
-    , transfer_id TEXT, recipient_name TEXT);
+    , transfer_id TEXT, recipient_name TEXT, total_price REAL);
 
 CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
