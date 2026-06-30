@@ -571,6 +571,10 @@ router.post('/bulk-import', authenticateToken, upload.single('file'), async (req
         let thresholdRaw = colMap['threshold'] ? getVal(row.getCell(colMap['threshold'])) : '';
         let threshold = Number(thresholdRaw);
         if (isNaN(threshold)) threshold = 0;
+          
+          let priceRaw = colMap['price'] ? getVal(row.getCell(colMap['price'])) : '';
+          let unitPrice = Number(priceRaw);
+          if (isNaN(unitPrice)) unitPrice = 0;
         
         let branchId = targetBranchId;
         
