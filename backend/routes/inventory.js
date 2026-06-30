@@ -469,23 +469,32 @@ router.get('/bulk-import-template', authenticateToken, async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Bulk Import Template');
     
-    worksheet.columns = [
-      { header: 'Branch Name', key: 'branch', width: 25 },
-      { header: 'Item Name', key: 'name', width: 30 },
-      { header: 'Category', key: 'category', width: 20 },
-      { header: 'Unit', key: 'unit', width: 15 },
-      { header: 'Initial Stock', key: 'stock', width: 15 },
-      { header: 'Threshold', key: 'threshold', width: 15 }
-    ];
-    
-    worksheet.addRow({
-      branch: 'Main Branch',
-      name: 'Sample Item',
-      category: 'Stationery',
-      unit: 'pcs',
-      stock: 100,
-      threshold: 10
-    });
+          const cols = [];
+      const rowData = {};
+      
+      if (req.user.role === 'Admin' || req.user.role === 'admin') {
+         cols.push({ header: 'Branch Name', key: 'branch', width: 25 });
+         rowData.branch = 'Main Branch';
+      }
+      
+      cols.push(
+        { header: 'Item Name', key: 'name', width: 30 },
+        { header: 'Category', key: 'category', width: 20 },
+        { header: 'Unit', key: 'unit', width: 15 },
+        { header: 'Initial Stock', key: 'stock', width: 15 },
+        { header: 'Threshold', key: 'threshold', width: 15 },
+        { header: 'Unit Price', key: 'price', width: 15 }
+      );
+      
+      rowData.name = 'Sample Item';
+      rowData.category = 'Stationery';
+      rowData.unit = 'pcs';
+      rowData.stock = 100;
+      rowData.threshold = 10;
+      rowData.price = 50.00;
+      
+      worksheet.columns = cols;
+      worksheet.addRow(rowData);
     
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="bulk_import_template.xlsx"');
@@ -584,23 +593,22 @@ router.post('/bulk-import', authenticateToken, upload.single('file'), async (req
           if (isNaN(unitPrice)) unitPrice = 0;
         
         let branchId = targetBranchId;
-        
-        if (!branchId) {
-          if (!bName) {
-            errors.push(`Row ${rowNumber}: Missing Branch Name`);
-            return;
+          
+          if (req.user.role !== 'Admin' && req.user.role !== 'admin') {
+            branchId = req.user.branch_id;
+          } else if (!branchId) {
+            if (!bName) {
+              errors.push(`Row ${rowNumber}: Missing Branch Name`);
+              return;
+            }
+            branchId = branchMap[bName.toLowerCase()];
+            if (!branchId) {
+              errors.push(`Row ${rowNumber}: Branch '${bName}' not found`);
+              return;
+            }
           }
-          branchId = branchMap[bName.toLowerCase()];
-          if (!branchId) {
-            errors.push(`Row ${rowNumber}: Branch '${bName}' not found`);
-            return;
-          }
-        }
         
-        if (req.user.role !== 'Admin' && req.user.role !== 'admin' && branchId !== req.user.branch_id) {
-          errors.push(`Row ${rowNumber}: Unauthorized to import into this branch`);
-          return;
-        }
+        // Auth check removed because staff branches are auto-assigned above.
         
         if (!iName) {
           errors.push(`Row ${rowNumber}: Missing Item Name`);
