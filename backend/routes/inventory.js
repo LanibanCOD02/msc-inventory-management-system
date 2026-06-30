@@ -529,6 +529,7 @@ router.post('/bulk-import', authenticateToken, upload.single('file'), async (req
       if (header === 'unit') colMap['unit'] = colNumber;
       if (header === 'initial stock') colMap['stock'] = colNumber;
       if (header === 'threshold') colMap['threshold'] = colNumber;
+        if (header === 'unit price') colMap['price'] = colNumber;
     });
     
     if (!colMap['name'] || !colMap['branch']) {
@@ -550,7 +551,7 @@ router.post('/bulk-import', authenticateToken, upload.single('file'), async (req
     
     const checkItem = db.prepare('SELECT id, stock, deleted_at FROM inventory_items WHERE name = ? AND branch_id = ?');
     const updateItem = db.prepare('UPDATE inventory_items SET category = ?, unit = ?, threshold = ?, stock = ?, deleted_at = NULL WHERE id = ?');
-    const insertItem = db.prepare('INSERT INTO inventory_items (id, name, category, stock, unit, threshold, branch_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    const insertItem = db.prepare('INSERT INTO inventory_items (id, name, category, stock, unit, threshold, branch_id, created_at, unit_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
     const insertMovement = db.prepare('INSERT INTO inventory_movements (id, item_id, movement_type, quantity, party_name, reference_code, branch_id, created_at) VALUES (?, ?, \'IN\', ?, \'Initial Stock\', \'BULK-IMPORT\', ?, ?)');
     
     db.transaction(() => {
@@ -602,7 +603,7 @@ router.post('/bulk-import', authenticateToken, upload.single('file'), async (req
         } else {
           const newId = generateUUID();
           const nowStr = new Date().toISOString();
-          insertItem.run(newId, iName, cat || null, stock, unit, threshold, branchId, nowStr);
+          insertItem.run(newId, iName, cat || null, stock, unit, threshold, branchId, nowStr, unitPrice);
           if (stock > 0) {
             insertMovement.run(generateUUID(), newId, stock, branchId, nowStr);
           }
