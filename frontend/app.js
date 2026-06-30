@@ -2371,9 +2371,11 @@ function requestDeletion(itemId, maxStock = 1, buyPrice = 0) {
     delReqQuantity.value = maxStock;
   }
   
+  window.currentDelReqBuyPrice = buyPrice;
   const buyPriceDisplay = document.getElementById('delReqBuyPriceDisplay');
-  if (buyPriceDisplay) {
-    buyPriceDisplay.textContent = `₹${buyPrice}`;
+  if (buyPriceDisplay && delReqQuantity) {
+    const qty = parseInt(delReqQuantity.value) || 0;
+    buyPriceDisplay.textContent = `₹${(buyPrice * qty).toFixed(2)}`;
   }
   
   deletionRequestModalBackdrop.classList.add('active');
@@ -2792,6 +2794,16 @@ if (bulkImportForm) {
     } finally {
       bulkImportSubmitBtn.textContent = ogText;
       bulkImportSubmitBtn.disabled = false;
+    }
+  });
+}
+
+if (delReqQuantity) {
+  delReqQuantity.addEventListener('input', () => {
+    const buyPriceDisplay = document.getElementById('delReqBuyPriceDisplay');
+    if (buyPriceDisplay && window.currentDelReqBuyPrice !== undefined) {
+      const qty = parseInt(delReqQuantity.value) || 0;
+      buyPriceDisplay.textContent = `₹${(window.currentDelReqBuyPrice * qty).toFixed(2)}`;
     }
   });
 }
