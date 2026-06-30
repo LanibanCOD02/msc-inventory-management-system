@@ -874,15 +874,36 @@ const sectionData = {
   programs: { title: "Programs", subtitle: "Monitor supply allocation across care and rehabilitation services.", action: `<button class="primary-btn section-add-entity" data-type="programs"><i data-lucide="plus"></i>Add program</button>`, content: null },
   suppliers: { title: "Suppliers", subtitle: "Keep vendor contacts and supply categories organized.", action: `<button class="primary-btn section-add-entity" data-type="suppliers"><i data-lucide="plus"></i>Add supplier</button>`, content: null },
   reports: {
-    title: "Reports", subtitle: "Generate clear summaries for review and planning.", action: ``,
-    content: async () => `<div class="report-grid">
-      <article class="report-card" onclick="generateReport('inventory')"><i data-lucide="clipboard-list"></i><div><h3>Inventory summary</h3><p>Current quantities and stock status</p></div></article>
-      <article class="report-card" onclick="generateReport('low_stock')"><i data-lucide="triangle-alert"></i><div><h3>Low stock report</h3><p>Items that need replenishment</p></div></article>
-      <article class="report-card" onclick="generateReport('movements')"><i data-lucide="arrow-left-right"></i><div><h3>Movement history</h3><p>Monthly inward and outward records</p></div></article>
-      <article class="report-card" onclick="generateReport('backup')"><i data-lucide="database-backup"></i><div><h3>Backup Data</h3><p>Save database and files to local zip</p></div></article>
-    </div>`
-  }
-};
+      title: "Reports", subtitle: "Generate clear summaries for review and planning.", action: ``,
+      content: async () => `<div class="report-grid">
+        <article class="report-card" onclick="generateReport('inventory')"><i data-lucide="clipboard-list"></i><div><h3>Inventory summary</h3><p>Current quantities and stock status</p></div></article>
+        <article class="report-card" onclick="generateReport('low_stock')"><i data-lucide="triangle-alert"></i><div><h3>Low stock report</h3><p>Items that need replenishment</p></div></article>
+        <article class="report-card" onclick="generateReport('movements')"><i data-lucide="arrow-left-right"></i><div><h3>Movement history</h3><p>Monthly inward and outward records</p></div></article>
+        <article class="report-card" onclick="generateReport('backup')"><i data-lucide="database-backup"></i><div><h3>Backup Data</h3><p>Save database and files to local zip</p></div></article>
+      </div>`
+    },
+    priceHistory: {
+      title: 'Price History',
+      subtitle: 'Track unit price changes across all items.',
+      action: '',
+      content: async () => {
+        try {
+          const data = await cachedFetch('/inventory/price-history/all');
+          if (!data || !data.length) return '<p style="text-align:center;color:var(--muted);padding:60px 0">No price changes recorded yet.</p>';
+          return `<div class="card section-panel"><div class="table-wrap"><table>
+            <thead><tr><th>Item</th><th>Category</th><th>Branch</th><th>Old Price</th><th>New Price</th><th>Quantity</th><th>Date</th></tr></thead>
+            <tbody>${data.map(h => `<tr>
+              <td>${h.item_name}</td><td>${h.category}</td><td>${h.branch_name || '-'}</td>
+              <td>₹${h.old_unit_price ?? '-'}</td><td>₹${h.new_unit_price}</td>
+              <td>${h.quantity_added}</td><td>${new Date(h.created_at).toLocaleDateString()}</td>
+            </tr>`).join('')}</tbody>
+          </table></div></div>`;
+        } catch (err) {
+          return `<p style="text-align:center;color:var(--danger);padding:60px 0">Error loading price history: ${err.message}</p>`;
+        }
+      }
+    }
+  };
 
 // ─── Navigation ──────────────────────────────────
 async function switchPage(page) {
@@ -1069,6 +1090,63 @@ function openItemDetail(id) {
   document.getElementById("itemDetailModalBackdrop").classList.add("active");
   document.getElementById("itemDetailModalBackdrop").dataset.itemId = id;
   document.getElementById("itemDetailModalBackdrop").dataset.itemStock = item.stock;
+  loadPriceHistory(id);
+}
+
+async function loadPriceHistory(itemId) {
+  const container = document.getElementById('priceHistoryContainer');
+  const chartDiv = document.getElementById('priceHistoryChart');
+  const listDiv = document.getElementById('priceHistoryList');
+  if (!container || !chartDiv || !listDiv) return;
+  
+  try {
+    const data = await cachedFetch(`/inventory/${itemId}/price-history`);
+    if (!data || data.length === 0) {
+      container.style.display = 'none';
+      return;
+    }
+    
+    container.style.display = 'block';
+    
+    // Sort chronological for chart
+    const chartData = [...data].reverse();
+    const dates = chartData.map(d => new Date(d.created_at).toLocaleDateString());
+    const prices = chartData.map(d => d.new_unit_price);
+    
+    const chart = echarts.init(chartDiv);
+    chart.setOption({
+      tooltip: { trigger: 'axis', formatter: '₹{c}' },
+      grid: { left: '10%', right: '5%', bottom: '15%', top: '10%' },
+      xAxis: { type: 'category', data: dates },
+      yAxis: { type: 'value', name: 'Price (₹)' },
+      series: [{ data: prices, type: 'line', smooth: true, itemStyle: { color: '#0d9488' }, areaStyle: { color: 'rgba(13, 148, 136, 0.2)' } }]
+    });
+    
+    // Table
+    listDiv.innerHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px;">
+      <thead>
+        <tr style="text-align: left; border-bottom: 1px solid var(--border); color: var(--text-light);">
+          <th style="padding: 6px 4px;">Date</th>
+          <th style="padding: 6px 4px;">Qty Added</th>
+          <th style="padding: 6px 4px;">Old Price</th>
+          <th style="padding: 6px 4px;">New Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(row => `
+          <tr style="border-bottom: 1px solid var(--border-light);">
+            <td style="padding: 6px 4px;">${new Date(row.created_at).toLocaleDateString()}</td>
+            <td style="padding: 6px 4px;">${row.quantity_added}</td>
+            <td style="padding: 6px 4px;">₹${row.old_unit_price ?? '-'}</td>
+            <td style="padding: 6px 4px;">₹${row.new_unit_price}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+  } catch (err) {
+    console.error('Failed to load price history:', err);
+    container.style.display = 'none';
+  }
 }
 
 function closeItemDetail() {
