@@ -64,6 +64,7 @@ router.get('/inventory-summary', authenticateToken, async (req, res) => {
           { header: 'Unit', key: 'unit', width: 15 },
           { header: 'Current Stock', key: 'stock', width: 15 },
           { header: 'Threshold', key: 'threshold', width: 15 },
+          { header: 'Unit Price (₹)', key: 'price', width: 15 },
           { header: 'Date Added', key: 'created_at', width: 20 }
         ];
         sheet.getRow(1).font = { bold: true };
@@ -75,10 +76,55 @@ router.get('/inventory-summary', authenticateToken, async (req, res) => {
             unit: i.unit || '-',
             stock: i.stock,
             threshold: i.threshold,
+            price: i.unit_price || 0,
             created_at: i.created_at ? i.created_at.split('T')[0] : '-'
           });
         });
       }
+    }
+
+    
+    // === Add Price Changes Log Sheet ===
+    const priceSheet = workbook.addWorksheet('Price Changes Log');
+    priceSheet.columns = [
+      { header: 'Date', key: 'date', width: 20 },
+      { header: 'Branch', key: 'branch', width: 25 },
+      { header: 'Item Name', key: 'item_name', width: 30 },
+      { header: 'Old Price (₹)', key: 'old_price', width: 15 },
+      { header: 'New Price (₹)', key: 'new_price', width: 15 },
+      { header: 'Changed By', key: 'changed_by', width: 20 }
+    ];
+    priceSheet.getRow(1).font = { bold: true };
+
+    const priceChanges = db.prepare(`
+      SELECT ph.created_at, b.name as branch_name, i.name as item_name, ph.old_unit_price, ph.new_unit_price, u.username as changed_by_name
+      FROM price_history ph
+      JOIN inventory_items i ON ph.item_id = i.id
+      LEFT JOIN branches b ON ph.branch_id = b.id
+      LEFT JOIN users u ON ph.changed_by = u.id
+      WHERE ph.created_at >= ? AND ph.created_at < ?
+      AND ${condition.replace(/branch_id/g, 'ph.branch_id')}
+      ORDER BY ph.created_at ASC
+    `).all(startDate, endDate, ...params);
+
+    // Filter to only items that had more than one price OR actually changed price
+    // "situation where more than 2 prices were included"
+    // To be safe, we just log all price changes this month where old != new or old is not null
+    const validChanges = priceChanges.filter(c => c.old_unit_price !== c.new_unit_price);
+
+    if (validChanges.length === 0) {
+      priceSheet.addRow(['No price changes recorded this month.']);
+    } else {
+      validChanges.forEach(p => {
+        priceSheet.addRow({
+          date: p.created_at ? p.created_at.split('T')[0] : '-',
+          branch: p.branch_name || 'Global Unassigned',
+          item_name: p.item_name,
+          old_price: p.old_unit_price === null ? 'Initial' : p.old_unit_price,
+          new_price: p.new_unit_price,
+          changed_by: p.changed_by_name || '-'
+        });
+      });
     }
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
