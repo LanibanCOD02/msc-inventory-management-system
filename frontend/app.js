@@ -1141,6 +1141,16 @@ if(document.getElementById("closeEditModal")) document.getElementById("closeEdit
 if(document.getElementById("cancelEditModal")) document.getElementById("cancelEditModal").addEventListener("click", closeEditModalFn);
 // if(editModal) // editModal.addEventListener("click", e => { if (e.target === editModal) closeEditModalFn(); });
 
+if (document.getElementById("requestDeletionBtn")) {
+  document.getElementById("requestDeletionBtn").addEventListener("click", () => {
+    const id = document.getElementById("itemDetailModalBackdrop").dataset.itemId;
+    const stock = document.getElementById("itemDetailModalBackdrop").dataset.itemStock;
+    const item = inventory.find(i => i.id === id);
+    const buyPrice = item ? (item.unit_price || 0) : 0;
+    requestDeletion(id, stock, buyPrice);
+  });
+}
+
 if (document.getElementById("deleteItemBtn")) {
   document.getElementById("deleteItemBtn").addEventListener("click", async () => {
     const id = document.getElementById("itemDetailModalBackdrop").dataset.itemId;
@@ -1156,14 +1166,6 @@ if (document.getElementById("deleteItemBtn")) {
         alert("Error deleting item: " + err.message);
       }
     });
-  });
-}
-
-if (document.getElementById("requestDeletionBtn")) {
-  document.getElementById("requestDeletionBtn").addEventListener("click", () => {
-    const id = document.getElementById("itemDetailModalBackdrop").dataset.itemId;
-    const stock = document.getElementById("itemDetailModalBackdrop").dataset.itemStock;
-    requestDeletion(id, stock);
   });
 }
 
@@ -2229,7 +2231,7 @@ async function loadRequests() {
       };
 
       if (req.reason === 'resale') {
-        reasonHtml += `<br><span style="font-size:11px; color:var(--text-light)">Price: ₹${req.resale_price}</span>`;
+        reasonHtml += `<br><span style="font-size:11px; color:var(--text-light)">Buy Price: ₹${req.item_buy_price || 0} | Resale: ₹${req.resale_price}</span>`;
         if (req.reason_details) reasonHtml += `<br><span style="font-size:11px; color:var(--text-light)">Notes: ${formatDetails(req.reason_details)}</span>`;
       } else if (req.reason === 'other' && req.reason_details) {
         reasonHtml += `<br><span style="font-size:11px; color:var(--text-light)">${formatDetails(req.reason_details)}</span>`;
@@ -2282,6 +2284,22 @@ function closeDeletionRequestModalFunc() {
 
 if (closeDeletionRequestModal) closeDeletionRequestModal.addEventListener('click', closeDeletionRequestModalFunc);
 if (cancelDeletionRequestModal) cancelDeletionRequestModal.addEventListener('click', closeDeletionRequestModalFunc);
+
+function requestDeletion(itemId, maxStock = 1, buyPrice = 0) {
+  delReqItemId.value = itemId;
+  delReqMaxStock.value = maxStock;
+  if(delReqQuantity) {
+    delReqQuantity.max = maxStock;
+    delReqQuantity.value = maxStock;
+  }
+  
+  const buyPriceDisplay = document.getElementById('delReqBuyPriceDisplay');
+  if (buyPriceDisplay) {
+    buyPriceDisplay.textContent = `₹${buyPrice}`;
+  }
+  
+  deletionRequestModalBackdrop.classList.add('active');
+}
 
 if (delReqReason) {
   delReqReason.addEventListener('change', () => {

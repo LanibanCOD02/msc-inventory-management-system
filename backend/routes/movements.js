@@ -94,6 +94,8 @@ router.post('/', authenticateToken, async (req, res) => {
       // Adjust stock and file URLs if INWARD
       let updateSql = 'UPDATE inventory_items SET stock = stock + ?';
       let updateParams = [movement_type === 'IN' ? qty : -qty];
+      let priceHistoryRow = null;
+
       if (movement_type === 'IN') {
         if (product_photo_url) { updateSql += ', product_photo_url = ?'; updateParams.push(product_photo_url); }
         if (invoice_pdf_url) { updateSql += ', invoice_pdf_url = ?'; updateParams.push(invoice_pdf_url); }
@@ -107,14 +109,41 @@ router.post('/', authenticateToken, async (req, res) => {
           // ((existing_stock * existing_unit_price) + total_price) / (existing_stock + new_quantity)
           const newStock = currentStock + qty;
           const newUnitPrice = ((currentStock * currentUnitPrice) + tp) / newStock;
+          const roundedNewPrice = Number(newUnitPrice.toFixed(2));
+          
+          if (roundedNewPrice !== currentUnitPrice) {
+            priceHistoryRow = {
+              old_unit_price: currentUnitPrice,
+              new_unit_price: roundedNewPrice,
+              quantity_added: qty,
+              total_price_paid: tp
+            };
+          }
           
           updateSql += ', unit_price = ?';
-          updateParams.push(Number(newUnitPrice.toFixed(2))); // Round to 2 decimal places
+          updateParams.push(roundedNewPrice); // Round to 2 decimal places
         }
       }
       updateSql += ' WHERE id = ?';
       updateParams.push(inventory_id);
       db.prepare(updateSql).run(...updateParams);
+      
+      if (priceHistoryRow) {
+        db.prepare(`
+          INSERT INTO price_history (id, item_id, branch_id, old_unit_price, new_unit_price, quantity_added, total_price_paid, changed_by, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          generateUUID(), 
+          inventory_id, 
+          resolvedBranchId || null, 
+          priceHistoryRow.old_unit_price, 
+          priceHistoryRow.new_unit_price, 
+          priceHistoryRow.quantity_added, 
+          priceHistoryRow.total_price_paid, 
+          req.user.id, 
+          new Date().toISOString()
+        );
+      }
       
       return db.prepare('SELECT * FROM inventory_movements WHERE id = ?').get(moveId);
     });

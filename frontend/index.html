@@ -88,6 +88,7 @@
         <button class="nav-item" data-page="programs"><i data-lucide="heart-handshake"></i><span>Programs</span></button>
         <button class="nav-item" data-page="suppliers"><i data-lucide="truck"></i><span>Suppliers</span></button>
         <button class="nav-item" data-page="reports"><i data-lucide="chart-no-axes-combined"></i><span>Reports</span></button>
+        <button class="nav-item" data-page="priceHistory"><i data-lucide="trending-up"></i><span>Price History</span></button>
         <button class="nav-item admin-only" data-page="users"><i data-lucide="users"></i><span>Users</span></button>
         <button class="nav-item admin-only" data-page="branches"><i data-lucide="map"></i><span>Branches</span></button>
         <button class="nav-item" data-page="requests">
@@ -944,11 +945,15 @@
           </label>
         </div>
 
-        <div id="delReqPriceWrapper" style="display:none;">
-          <label>Resale Price (₹)
-            <input type="number" id="delReqPrice" min="0" step="0.01" placeholder="e.g. 500">
-          </label>
-        </div>
+          <div id="delReqPriceWrapper" style="display:none; gap:16px;">
+            <label style="flex: 1">Resale Price (₹)
+              <input type="number" id="delReqPrice" min="0" step="0.01" placeholder="e.g. 500">
+            </label>
+            <div style="flex: 1; display:flex; flex-direction:column; justify-content:flex-end; padding-bottom: 8px;">
+              <span style="font-size: 11px; color: var(--text-secondary);">Original Buy Price:</span>
+              <strong id="delReqBuyPriceDisplay" style="font-size: 14px; color: var(--text);">₹0.00</strong>
+            </div>
+          </div>
 
         <div id="delReqDetailsWrapper" style="display:none;">
           <label for="delReqDetails" id="delReqDetailsLabel" style="display:block; margin-bottom:4px;">Details</label>

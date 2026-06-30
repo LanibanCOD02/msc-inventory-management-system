@@ -194,6 +194,45 @@ router.get('/movements', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/inventory/price-history/all — standalone page, ALL items
+router.get('/price-history/all', authenticateToken, (req, res) => {
+  try {
+    let query = `
+      SELECT ph.*, i.name as item_name, i.category, b.name as branch_name
+      FROM price_history ph
+      JOIN inventory_items i ON ph.item_id = i.id
+      LEFT JOIN branches b ON ph.branch_id = b.id
+    `;
+    const params = [];
+    if (req.user.role !== 'Admin') {
+      query += ' WHERE ph.branch_id = ?';
+      params.push(req.user.branch_id);
+    }
+    query += ' ORDER BY ph.created_at DESC LIMIT 100';
+    res.json(db.prepare(query).all(...params));
+  } catch (error) {
+    console.error('Price history error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/inventory/:id/price-history — for one item
+router.get('/:id/price-history', authenticateToken, (req, res) => {
+  try {
+    let query = 'SELECT * FROM price_history WHERE item_id = ?';
+    const params = [req.params.id];
+    if (req.user.role !== 'Admin') {
+      query += ' AND branch_id = ?';
+      params.push(req.user.branch_id);
+    }
+    query += ' ORDER BY created_at ASC';
+    res.json(db.prepare(query).all(...params));
+  } catch (error) {
+    console.error('Price history error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get specific inventory item by ID (Full data including document URLs)
 router.get('/:id', authenticateToken, async (req, res, next) => {
   // Fallback just in case
@@ -304,7 +343,7 @@ router.get('/deletion-requests/all', authenticateToken, async (req, res) => {
     
     // Admin sees all based on branch filter, Staff sees only their branch
     const requests = db.prepare(`
-      SELECT dr.*, i.name as item_name, i.product_photo_url, u.username as requested_by_name, b.name as branch_name
+      SELECT dr.*, i.name as item_name, i.unit_price as item_buy_price, i.product_photo_url, u.username as requested_by_name, b.name as branch_name
       FROM deletion_requests dr
       JOIN inventory_items i ON dr.item_id = i.id
       JOIN users u ON dr.requested_by = u.id
