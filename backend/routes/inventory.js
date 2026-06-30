@@ -547,9 +547,10 @@ router.post('/bulk-import', authenticateToken, upload.single('file'), async (req
         if (header === 'unit price') colMap['price'] = colNumber;
     });
     
-    if (!colMap['name'] || !colMap['branch']) {
-      return res.status(400).json({ error: 'Template missing required columns (Item Name, Branch Name)' });
-    }
+          const isAdmin = req.user.role === 'Admin' || req.user.role === 'admin';
+      if (!colMap['name'] || (isAdmin && !req.body.branch_id && colMap['branch'] === undefined)) {
+        return res.status(400).json({ error: 'Template missing required columns (Item Name, Branch Name)' });
+      }
     
     let added = 0;
     let updated = 0;
