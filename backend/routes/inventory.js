@@ -419,7 +419,7 @@ router.post('/deletion-requests/:reqId/reject', authenticateToken, requireAdmin,
 });
 
 // GET /api/inventory/bulk-import-template
-router.get('/bulk-import-template', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/bulk-import-template', authenticateToken, async (req, res) => {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Bulk Import Template');
@@ -453,7 +453,7 @@ router.get('/bulk-import-template', authenticateToken, requireAdmin, async (req,
 });
 
 // POST /api/inventory/bulk-import
-router.post('/bulk-import', authenticateToken, requireAdmin, upload.single('file'), async (req, res) => {
+router.post('/bulk-import', authenticateToken, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   
   try {
@@ -544,6 +544,11 @@ router.post('/bulk-import', authenticateToken, requireAdmin, upload.single('file
             errors.push(`Row ${rowNumber}: Branch '${bName}' not found`);
             return;
           }
+        }
+        
+        if (req.user.role !== 'Admin' && req.user.role !== 'admin' && branchId !== req.user.branch_id) {
+          errors.push(`Row ${rowNumber}: Unauthorized to import into this branch`);
+          return;
         }
         
         if (!iName) {
