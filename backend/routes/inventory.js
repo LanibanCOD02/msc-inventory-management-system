@@ -108,6 +108,12 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     const insertedItem = db.prepare('SELECT * FROM inventory_items WHERE id = ?').get(itemId);
+    
+    // Log initial price in history
+    db.prepare(`
+      INSERT INTO price_history (id, item_id, branch_id, old_unit_price, new_unit_price, quantity_added, total_price_paid, changed_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(generateUUID(), itemId, resolvedBranchId || null, null, itemUnitPrice, itemStock, itemStock * itemUnitPrice, req.user.id, new Date().toISOString());
 
     // If initial stock > 0, auto-create an INWARD movement
     if (insertedItem.stock > 0) {
@@ -553,6 +559,7 @@ router.post('/bulk-import', authenticateToken, upload.single('file'), async (req
     const updateItem = db.prepare('UPDATE inventory_items SET category = ?, unit = ?, threshold = ?, stock = ?, deleted_at = NULL WHERE id = ?');
     const insertItem = db.prepare('INSERT INTO inventory_items (id, name, category, stock, unit, threshold, branch_id, created_at, unit_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
     const insertMovement = db.prepare('INSERT INTO inventory_movements (id, item_id, movement_type, quantity, party_name, reference_code, branch_id, created_at) VALUES (?, ?, \'IN\', ?, \'Initial Stock\', \'BULK-IMPORT\', ?, ?)');
+    const insertPriceHistory = db.prepare('INSERT INTO price_history (id, item_id, branch_id, old_unit_price, new_unit_price, quantity_added, total_price_paid, changed_by, created_at) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?)');
     
     db.transaction(() => {
       worksheet.eachRow((row, rowNumber) => {
@@ -608,6 +615,7 @@ router.post('/bulk-import', authenticateToken, upload.single('file'), async (req
           const newId = generateUUID();
           const nowStr = new Date().toISOString();
           insertItem.run(newId, iName, cat || null, stock, unit, threshold, branchId, nowStr, unitPrice);
+            insertPriceHistory.run(generateUUID(), newId, branchId, unitPrice, stock, stock * unitPrice, req.user.id, nowStr);
           if (stock > 0) {
             insertMovement.run(generateUUID(), newId, stock, branchId, nowStr);
           }
