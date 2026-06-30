@@ -2430,15 +2430,7 @@ if (deletionRequestForm) {
   });
 }
 
-function requestDeletion(itemId, maxStock = 1) {
-  delReqItemId.value = itemId;
-  delReqMaxStock.value = maxStock;
-  if(delReqQuantity) {
-    delReqQuantity.max = maxStock;
-    delReqQuantity.value = maxStock;
-  }
-  deletionRequestModalBackdrop.classList.add('active');
-}
+
 
 async function approveDeletion(reqId) {
   if (!confirm("Approve deletion?")) return;
