@@ -297,17 +297,16 @@
 
       <!-- ─── Branches Section ────────────────────────────── -->
       <section class="section-branches" id="sectionBranches" hidden style="padding: 24px; animation: fadeIn 0.3s ease;">
-        <div class="card">
-          <div class="card-header">
-            <div><h3>Branch Management</h3><p>Manage multiple branch locations</p></div>
-            <button class="primary-btn" id="addBranchBtn"><i data-lucide="map-pin"></i>Add branch</button>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px;">
+          <div>
+            <h2 style="font:700 20px 'Outfit',sans-serif;color:var(--text);margin:0;">Branch Management</h2>
+            <p style="color:var(--text-secondary);font-size:13px;margin:4px 0 0;">Manage multiple branch locations and their internal blocks</p>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th scope="col">Branch Name</th><th scope="col">Location</th><th scope="col">Address</th><th scope="col" style="text-align:right">Actions</th></tr></thead>
-              <tbody id="branchesBody"></tbody>
-            </table>
-          </div>
+          <button class="primary-btn" id="addBranchBtn"><i data-lucide="map-pin"></i>Add branch</button>
+        </div>
+        <!-- New grid layout replacing the old table -->
+        <div id="branchesGrid" style="display:grid; grid-template-columns:1fr; gap:20px;">
+          <!-- Branch cards will be injected here by app.js -->
         </div>
       </section>
 

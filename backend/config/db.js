@@ -17,6 +17,30 @@ try { db.exec("ALTER TABLE deletion_requests ADD COLUMN resale_price REAL"); } c
 try { db.exec("ALTER TABLE deletion_requests ADD COLUMN quantity INTEGER"); } catch (e) { /* Ignore if exists */ }
 try { db.exec("ALTER TABLE inventory_movements ADD COLUMN total_price REAL"); } catch(e) { /* Ignore if exists */ }
 
+try { db.exec("ALTER TABLE inventory_items ADD COLUMN item_code TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE inventory_items ADD COLUMN serial_number TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE inventory_movements ADD COLUMN item_code TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE inventory_movements ADD COLUMN serial_number TEXT"); } catch(e) {}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS branch_blocks (
+      id TEXT PRIMARY KEY,
+      branch_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (branch_id) REFERENCES branches(id)
+    )
+  `);
+} catch(e) {}
+
+try { db.exec("ALTER TABLE inventory_movements ADD COLUMN from_block_id TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE inventory_movements ADD COLUMN to_block_id TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE inventory_movements ADD COLUMN to_branch_id TEXT"); } catch(e) {}
+
+
+
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS price_history (

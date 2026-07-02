@@ -23,7 +23,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const { condition, params } = getBranchFilterSql(req.user, req.query.branch_id);
     
     const items = db.prepare(`
-      SELECT i.id, i.name, i.category, i.stock, i.unit, i.threshold, i.unit_price, i.product_photo_url, i.created_at, i.default_supplier, i.program, i.branch_id, b.name as branch_name 
+      SELECT i.id, i.name, i.category, i.stock, i.unit, i.threshold, i.unit_price, i.product_photo_url, i.created_at, i.default_supplier, i.program, i.item_code, i.serial_number, i.branch_id, b.name as branch_name 
       FROM inventory_items i
       LEFT JOIN branches b ON i.branch_id = b.id
       WHERE i.deleted_at IS NULL AND ${condition.replace(/branch_id/g, 'i.branch_id')} 
@@ -66,7 +66,7 @@ router.get('/alerts', authenticateToken, async (req, res) => {
 // Add new item
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { name, category, stock, unit, threshold, unit_price, product_photo_url, invoice_pdf_url, branch_id, default_supplier, program } = req.body;
+    const { name, category, stock, unit, threshold, unit_price, product_photo_url, invoice_pdf_url, branch_id, default_supplier, program, item_code, serial_number } = req.body;
 
     const resolvedBranchId = getBranchId(req.user, branch_id);
 
@@ -102,9 +102,9 @@ router.post('/', authenticateToken, async (req, res) => {
       // Insert new
       itemId = generateUUID();
       db.prepare(`
-        INSERT INTO inventory_items (id, name, category, stock, unit, threshold, unit_price, product_photo_url, invoice_pdf_url, branch_id, default_supplier, program, created_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(itemId, name, category, itemStock, unit, Number(threshold) || 10, itemUnitPrice, product_photo_url, invoice_pdf_url, resolvedBranchId || null, default_supplier || null, program || null, new Date().toISOString());
+        INSERT INTO inventory_items (id, name, category, stock, unit, threshold, unit_price, product_photo_url, invoice_pdf_url, branch_id, default_supplier, program, created_at, item_code, serial_number) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(itemId, name, category, itemStock, unit, Number(threshold) || 10, itemUnitPrice, product_photo_url, invoice_pdf_url, resolvedBranchId || null, default_supplier || null, program || null, new Date().toISOString(), item_code || null, serial_number || null);
     }
 
     const insertedItem = db.prepare('SELECT * FROM inventory_items WHERE id = ?').get(itemId);

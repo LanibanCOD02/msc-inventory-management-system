@@ -24,7 +24,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     // Data
     const data = db.prepare(`
-      SELECT m.*, i.name as inventory_items_name, i.unit as inventory_items_unit, u.username as users_username
+      SELECT m.*, i.name as inventory_items_name, i.unit as inventory_items_unit, i.item_code as inventory_item_code, i.serial_number as inventory_serial_number, u.username as users_username
       FROM inventory_movements m
       LEFT JOIN inventory_items i ON m.item_id = i.id
       LEFT JOIN users u ON m.created_by = u.id
@@ -63,7 +63,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // POST /api/movements
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { inventory_id, type, quantity, party_name, reference_code, notes, branch_id, recipient_name, product_photo_url, invoice_pdf_url, total_price } = req.body;
+    const { inventory_id, type, quantity, party_name, reference_code, notes, branch_id, recipient_name, product_photo_url, invoice_pdf_url, total_price, item_code, serial_number } = req.body;
     
     const qty = Number(quantity);
     if (!qty || qty <= 0) return res.status(400).json({ error: 'Quantity must be positive' });
@@ -87,9 +87,9 @@ router.post('/', authenticateToken, async (req, res) => {
       const moveId = generateUUID();
       
       db.prepare(`
-        INSERT INTO inventory_movements (id, reference_code, item_id, movement_type, quantity, party_name, created_by, branch_id, created_at, recipient_name, total_price) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(moveId, refCode, inventory_id, movement_type, qty, party_name || null, req.user.id, resolvedBranchId || null, new Date().toISOString(), recipient_name || null, total_price || null);
+        INSERT INTO inventory_movements (id, reference_code, item_id, movement_type, quantity, party_name, created_by, branch_id, created_at, recipient_name, total_price, item_code, serial_number) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(moveId, refCode, inventory_id, movement_type, qty, party_name || null, req.user.id, resolvedBranchId || null, new Date().toISOString(), recipient_name || null, total_price || null, item_code || null, serial_number || null);
 
       // Adjust stock and file URLs if INWARD
       let updateSql = 'UPDATE inventory_items SET stock = stock + ?';

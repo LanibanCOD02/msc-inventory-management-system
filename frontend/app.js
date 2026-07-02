@@ -761,7 +761,11 @@ async function renderMovementTable(type) {
               ${sign}${quantity} ${itemUnit}
             </span>
           </td>
+          <td data-label="Item Code">${r.item_code || '-'}</td>
+          <td data-label="Serial Number">${r.serial_number || '-'}</td>
+          <td data-label="Reference No.">${refCode}</td>
           <td data-label="${isIn ? 'Supplier' : 'Issued to'}">${partyName}</td>
+          <td data-label="Total Price">${r.total_price ? '₹' + Number(r.total_price).toLocaleString('en-IN') : '-'}</td>
           <td data-label="Date">${date}</td>
           ${canVoid ? `<td data-label="Actions">
             <div style="display:flex;gap:6px;justify-content:flex-end;">
@@ -783,7 +787,7 @@ async function renderMovementTable(type) {
       `;
     }
 
-    return `<div class="card section-panel"><div class="card-header"><div><h3>${isIn ? "Recent Receipts" : "Recent Issues"}</h3><p>${isIn ? "Latest supplies received" : "Latest supplies issued"}</p></div></div><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Item name</th><th>Quantity</th><th>${isIn ? "Supplier" : "Issued to"}</th><th>Date</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No movements found.</td></tr>`}</tbody></table></div>${paginationHtml}</div>`;
+    return `<div class="card section-panel"><div class="card-header"><div><h3>${isIn ? "Recent Receipts" : "Recent Issues"}</h3><p>${isIn ? "Latest supplies received" : "Latest supplies issued"}</p></div></div><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Item name</th><th>Quantity</th><th>Item Code</th><th>Serial Number</th><th>Reference No.</th><th>${isIn ? "Supplier" : "Issued to"}</th><th>Total Price</th><th>Date</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No movements found.</td></tr>`}</tbody></table></div>${paginationHtml}</div>`;
   } catch (err) {
     return `<div class="alert-item"><div class="alert-dot critical"></div><p>Error loading movements<span>${err.message}</span></p></div>`;
   }
@@ -1922,6 +1926,8 @@ if (movementModal) {
           method: 'POST',
           body: JSON.stringify({
             inventory_id: d.get('inventory_id'),
+          item_code: d.get('item_code') || null,
+          serial_number: d.get('serial_number') || null,
             type: d.get('type'),
             quantity: Number(d.get('quantity')),
             party_name: (() => {
@@ -2473,34 +2479,69 @@ function escapeHTML(str) {
 }
 
 async function renderBranchesTable() {
-  const tbody = document.getElementById('branchesBody');
-  if(!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Loading branches...</td></tr>';
+  const grid = document.getElementById('branchesGrid');
+  if(!grid) return;
+  
+  grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)"><span class="spinner"></span> Loading branches...</div>';
+  
   try {
     const branches = await cachedFetch('/branches');
-    tbody.innerHTML = '';
+    
+    // Fetch blocks for all branches simultaneously for rendering speed
+    const blocksPromises = branches.map(b => cachedFetch(`/branches/${b.id}/blocks`).catch(() => []));
+    const allBlocksArrays = await Promise.all(blocksPromises);
+    
+    grid.innerHTML = '';
+    
     if(branches.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted)">No branches found</td></tr>';
+      grid.innerHTML = '<div class="card" style="padding:40px;text-align:center;color:var(--muted)">No branches configured.</div>';
       return;
     }
-    branches.forEach(b => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="font-weight:500;color:var(--text)">${escapeHTML(b.name)}</td>
-        <td>${escapeHTML(b.location || '-')}</td>
-        <td>${escapeHTML(b.address || '-')}</td>
-        <td style="text-align:right">
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="icon-btn" onclick="editBranch('${b.id}', '${escapeHTML(b.name)}', '${escapeHTML(b.location||'')}', '${escapeHTML(b.address||'')}', '${escapeHTML(b.pincode||'')}')"><i data-lucide="pencil" style="width:16px;height:16px;color:var(--text-light)"></i></button>
-            <button class="icon-btn" onclick="deactivateBranch('${b.id}')"><i data-lucide="trash-2" style="width:16px;height:16px;color:var(--danger)"></i></button>
+    
+    branches.forEach((b, index) => {
+      const blocks = allBlocksArrays[index] || [];
+      
+      // Build the grid of block sub-cards
+      const blocksHtml = blocks.length > 0 ? `
+        <div class="category-grid" style="padding:20px; background:var(--bg-alt); border-top:1px solid var(--border-light)">
+          ${blocks.map(block => `
+            <div class="category-card" style="padding:14px; display:flex; align-items:center; gap:12px;">
+              <div style="width:36px; height:36px; border-radius:8px; background:var(--teal-50); color:var(--teal); display:grid; place-items:center;"><i data-lucide="layout-template" style="width:16px; height:16px"></i></div>
+              <div>
+                <h3 style="margin:0 0 2px; font-size:13px">${escapeHTML(block.name)}</h3>
+                ${block.description ? `<p style="margin:0; font-size:11px">${escapeHTML(block.description)}</p>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<div style="padding:24px; border-top:1px solid var(--border-light); font-size:13px; color:var(--muted); text-align:center;">No blocks configured for this branch.</div>`;
+      
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-header" style="flex-wrap:wrap; gap:16px; align-items:center;">
+          <div>
+            <h3>${escapeHTML(b.name)}</h3>
+            <p>${escapeHTML(b.location || '')}${b.address ? ` · ${escapeHTML(b.address)}` : ''}</p>
           </div>
-        </td>
+          <div class="card-actions">
+            <button class="secondary-btn admin-only" onclick="window.openAddBlockModal('${b.id}')"><i data-lucide="plus"></i>Add Block</button>
+            <button class="primary-btn" onclick="window.openTransferModal('${b.id}', '${escapeHTML(b.name).replace(/'/g, "\\'")}')"><i data-lucide="arrow-left-right"></i>Transfer Stock</button>
+            <div style="display:flex; gap:4px; margin-left:8px; padding-left:12px; border-left:1px solid var(--border);" class="admin-only">
+              <button class="icon-btn" onclick="editBranch('${b.id}', '${escapeHTML(b.name).replace(/'/g, "\\'")}', '${escapeHTML(b.location||'').replace(/'/g, "\\'")}', '${escapeHTML(b.address||'').replace(/'/g, "\\'")}', '${escapeHTML(b.pincode||'').replace(/'/g, "\\'")}')" title="Edit branch settings"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+              <button class="icon-btn" onclick="deactivateBranch('${b.id}')" title="Deactivate branch"><i data-lucide="trash-2" style="width:14px;height:14px;color:var(--danger)"></i></button>
+            </div>
+          </div>
+        </div>
+        ${blocksHtml}
       `;
-      tbody.appendChild(tr);
+      grid.appendChild(card);
     });
-    renderIcons(tbody);
+    
+    renderIcons(grid);
+    enforceRoles(); // Hides the Add Block / Edit / Delete buttons for standard Staff
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--danger)">Error loading branches: ${err.message}</td></tr>`;
+    grid.innerHTML = `<div class="card" style="padding:40px;text-align:center;color:var(--danger)">Error loading branches: ${err.message}</div>`;
   }
 }
 
